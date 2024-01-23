@@ -1,0 +1,67 @@
+---
+title: 'Data Wrangling'
+author: 'Briana Barajas'
+date: 2024-01-23
+---
+
+## Preparation
+
+Set-up
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Load packages
+
+```{r, results='hide', warning = FALSE, message=FALSE}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(ggspatial)
+library(terra)
+
+# modelling
+library(dismo)
+```
+
+## Mapping Data
+
+### Species point data
+
+```{r}
+# read data
+spp_point <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs_11Jul22.shp')) %>% 
+  clean_names()
+
+# update CRS (using EPSG:4269)
+spp_point <- st_transform(spp_point, "EPSG:4296")
+
+# map data
+ggplot(data = spp_point) +
+  geom_sf()
+```
+
+
+### Environment Data
+
+```{r, warning=FALSE}
+# read in data files
+slope <- rast('data/CampRoberts_spatial_data/crob_slope')
+elev <- rast('data/CampRoberts_spatial_data/crob_elev')
+aspect <- rast('data/CampRoberts_spatial_data/crob_aspect')
+
+# update CRS (using EPSG:4269)
+crs(slope) <- "EPSG:4296"
+crs(elev) <- "EPSG:4296"
+crs(aspect) <- "EPSG:4296"
+
+# plot data
+plot(slope, main = 'Slope Raster')
+plot(elev, main = 'Elevation Raster')
+plot(aspect, main = 'Aspect Raster')
+```
