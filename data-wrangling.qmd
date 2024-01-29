@@ -25,28 +25,28 @@ library(sf)
 library(ggspatial)
 library(terra)
 
-# modelling
+# modeling
 library(dismo)
 ```
 
-## Mapping Raw Data
+### Read in Data
 
-### Species point data
+#### Species point data
 
 ```{r}
 # read data
-spp_point <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs_11Jul22.shp')) %>% 
+occurence <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs_11Jul22.shp')) %>% 
   clean_names()
 
 # update CRS (using EPSG:4269)
-occurence <- st_transform(spp_point, "EPSG:4296")
+occurence <- st_transform(occurence, "EPSG:4296")
 
 # map data
 ggplot(data = occurence) +
   geom_sf()
 ```
 
-### Environment data
+#### Environment data
 
 ```{r, warning=FALSE}
 # read in data files
@@ -65,11 +65,11 @@ plot(elev, main = 'Elevation Raster')
 plot(aspect, main = 'Aspect Raster')
 ```
 
-### Canopy rasters
+#### Canopy rasters
 
 Unlike the environmental data, canopy information is specific to the plots.
 
-```{r}
+```{r, warning=FALSE}
 # create a list of canopy file path
 canopy_files <- list.files(here('data', 'CampRoberts_spatial_data', 'Canopy_raster'), pattern = 'can*', full.names = TRUE)
 
@@ -85,11 +85,58 @@ for (i in seq_along(canopy_files)) {
   # save the updated raster
   assign(paste0("can_rast_p", i), can_rast, envir = .GlobalEnv)
 }
+
+# remove duplicate of last raster read in (can_rast_p8)
+rm(can_rast, canopy_files)
+
+# plot one canopy raster to check
+plot(can_rast_p3, main = "Canopy Plot 3")
 ```
 
-### Plot outlines
+#### Plot outlines
+
+```{r, message=FALSE, warning=FALSE}
+# create list of plot outline shape files
+plot_outline_files <- list.files(here('data', 'CampRoberts_spatial_data', 'plot_outlines'), pattern = "\\.shp$", full.names = TRUE)
+
+# for-loop to read in data
+for (i in seq_along(plot_outline_files)) {
+  
+  # read in data
+  outline <- st_read(plot_outline_files[i])
+  
+  # update CRS
+  outline <- st_transform(outline, "EPSG:4296")
+  
+  # save to global environment
+  assign(paste0("outline_p", i), outline, envir = .GlobalEnv)
+  
+}
+
+# join all outlines into a single sf layer
+plot_outlines <- rbind(outline_p1, outline_p2, outline_p3, outline_p4,
+              outline_p5, outline_p6, outline_p7, outline_p8)
+
+# remove temporary variables
+rm(outline, plot_outline_files, outline_p1, 
+   outline_p2, outline_p3, outline_p4,outline_p5, 
+   outline_p6, outline_p7, outline_p8)
+
+# plot one plot outline
+ggplot(plot_outlines) +
+  geom_sf()
+```
+
+## Plot Points
+
+Check if the `occurence` points fall within the plot outlines by plotting them all together. If there are points outside of the plot perimeter, they can be removed before running the
 
 ```{r}
-# read in files
+occurence_in_plt <- ggplot() +
+  geom_sf(data = plot_outlines) +
+  geom_sf(data = occurence, color = 'dodgerblue',
+          size = 0.5, alpha = 0.5)
 
+# use interactive map to better visualize if points fall into plots
+plotly::ggplotly(occurence_in_plt)
 ```
