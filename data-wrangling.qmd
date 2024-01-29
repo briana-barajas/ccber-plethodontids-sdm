@@ -29,7 +29,7 @@ library(terra)
 library(dismo)
 ```
 
-## Mapping Data
+## Mapping Raw Data
 
 ### Species point data
 
@@ -39,19 +39,18 @@ spp_point <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs
   clean_names()
 
 # update CRS (using EPSG:4269)
-spp_point <- st_transform(spp_point, "EPSG:4296")
+occurence <- st_transform(spp_point, "EPSG:4296")
 
 # map data
-ggplot(data = spp_point) +
+ggplot(data = occurence) +
   geom_sf()
 ```
 
-
-### Environment Data
+### Environment data
 
 ```{r, warning=FALSE}
 # read in data files
-slope <- rast('data/CampRoberts_spatial_data/crob_slope')
+slope <- rast(x = 'data/CampRoberts_spatial_data/crob_slope')
 elev <- rast('data/CampRoberts_spatial_data/crob_elev')
 aspect <- rast('data/CampRoberts_spatial_data/crob_aspect')
 
@@ -64,4 +63,33 @@ crs(aspect) <- "EPSG:4296"
 plot(slope, main = 'Slope Raster')
 plot(elev, main = 'Elevation Raster')
 plot(aspect, main = 'Aspect Raster')
+```
+
+### Canopy rasters
+
+Unlike the environmental data, canopy information is specific to the plots.
+
+```{r}
+# create a list of canopy file path
+canopy_files <- list.files(here('data', 'CampRoberts_spatial_data', 'Canopy_raster'), pattern = 'can*', full.names = TRUE)
+
+# for-loop reads in canopy rasters & save them to the Global environment
+for (i in seq_along(canopy_files)) {
+  
+  # read in canopy raster
+  can_rast <- rast(canopy_files[i])
+  
+  # update the CRS
+  crs(can_rast) <- 'EPSG:4296'
+  
+  # save the updated raster
+  assign(paste0("can_rast_p", i), can_rast, envir = .GlobalEnv)
+}
+```
+
+### Plot outlines
+
+```{r}
+# read in files
+
 ```
