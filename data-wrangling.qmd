@@ -9,12 +9,12 @@ date: 2024-01-23
 Set-up
 
 ```{r, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
 Load packages
 
-```{r, results='hide', warning = FALSE, message=FALSE}
+```{r, results='hide'}
 # wrangling
 library(tidyverse)
 library(here)
@@ -33,13 +33,17 @@ library(dismo)
 
 #### Species point data
 
-```{r}
+```{r, results='hide'}
 # read data
 occurence <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs_11Jul22.shp')) %>% 
-  clean_names()
+  clean_names() %>% 
+  st_make_valid()
 
 # update CRS (using EPSG:4269)
 occurence <- st_transform(occurence, "EPSG:4296")
+```
+
+```{r}
 
 # map data
 ggplot(data = occurence) +
@@ -95,7 +99,7 @@ plot(can_rast_p3, main = "Canopy Plot 3")
 
 #### Plot outlines
 
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, results='hide'}
 # create list of plot outline shape files
 plot_outline_files <- list.files(here('data', 'CampRoberts_spatial_data', 'plot_outlines'), pattern = "\\.shp$", full.names = TRUE)
 
@@ -103,7 +107,8 @@ plot_outline_files <- list.files(here('data', 'CampRoberts_spatial_data', 'plot_
 for (i in seq_along(plot_outline_files)) {
   
   # read in data
-  outline <- st_read(plot_outline_files[i])
+  outline <- st_read(plot_outline_files[i]) %>% 
+    st_make_valid()
   
   # update CRS
   outline <- st_transform(outline, "EPSG:4296")
@@ -121,22 +126,26 @@ plot_outlines <- rbind(outline_p1, outline_p2, outline_p3, outline_p4,
 rm(outline, plot_outline_files, outline_p1, 
    outline_p2, outline_p3, outline_p4,outline_p5, 
    outline_p6, outline_p7, outline_p8)
+```
 
+```{r}
 # plot one plot outline
 ggplot(plot_outlines) +
   geom_sf()
 ```
 
-## Plot Points
+## Points within plots
 
-Check if the `occurence` points fall within the plot outlines by plotting them all together. If there are points outside of the plot perimeter, they can be removed before running the
+Check if the `occurence` points fall within the `plot_outlines` using `st_filter.`
 
 ```{r}
-occurence_in_plt <- ggplot() +
-  geom_sf(data = plot_outlines) +
-  geom_sf(data = occurence, color = 'dodgerblue',
-          size = 0.5, alpha = 0.5)
+# compare to total occurence
+glue::glue("Number of total occurence points: {nrow(occurence)}")
 
-# use interactive map to better visualize if points fall into plots
-plotly::ggplotly(occurence_in_plt)
+# Run st_filer to get points that touch the outlines
+glue::glue("Number of occurence points within plot outlines: {nrow(st_filter(occurence, plot_outlines, .predicate = st_intersects))}")
+
+# create subset of occurences that fall within/intersect with plots
+occurence_subset <- st_filter(occurence, plot_outlines,
+                              .predicate = st_intersects)
 ```
