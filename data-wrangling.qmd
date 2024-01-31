@@ -24,6 +24,7 @@ library(janitor)
 library(sf)
 library(ggspatial)
 library(terra)
+library(spatialEco) #transform aspect
 
 # modeling
 library(dismo)
@@ -148,4 +149,18 @@ glue::glue("Number of occurence points within plot outlines: {nrow(st_filter(occ
 # create subset of occurences that fall within/intersect with plots
 occurence_subset <- st_filter(occurence, plot_outlines,
                               .predicate = st_intersects)
+```
+
+## Transforming Aspect
+
+Aspect currently ranges from 0 to 360 degrees (view plot scale). This can impact model performance since 1 degree is adjacent to 360 degrees, but a model will recognize these values as being very different. The Beers method (1996) rescales aspect to range between 0 and 1, but does not consider the steepness of slope. The McCune & Keon method (2002) works very similarly, but uses slope and aspect as indicators of a **heat load index. For this method, HLI values range from 0 (coolest) to 1 (hottest).**
+
+Similary, the Roberts & Cooper method (1989) transforms aspect to a value between 0 and 1. A value of 0 responds to land oriented in the north-east direction, while 1 represents the dyer, south-southwestern slopes. Since this method still uses directionality, I decided to use th McCune & Keon method. The McCune method can potentially produce a better analysis of micro-climates that a salamander might be more sensitive to.
+
+```{r}
+# calculate heat load index (HLI) raster
+#aspect_hli <- hli(aspect) #need to handle NA's before running this
+
+
+#global(aspect, fun="notNA")
 ```
