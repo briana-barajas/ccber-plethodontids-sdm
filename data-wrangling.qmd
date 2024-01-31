@@ -70,6 +70,11 @@ plot(elev, main = 'Elevation Raster')
 plot(aspect, main = 'Aspect Raster')
 ```
 
+```{r}
+# aspect <- project(aspect, "+proj=longlat +datum=WGS84")
+# plot(aspect)
+```
+
 #### Canopy rasters
 
 Unlike the environmental data, canopy information is specific to the plots.
@@ -158,9 +163,23 @@ Aspect currently ranges from 0 to 360 degrees (view plot scale). This can impact
 Similary, the Roberts & Cooper method (1989) transforms aspect to a value between 0 and 1. A value of 0 responds to land oriented in the north-east direction, while 1 represents the dyer, south-southwestern slopes. Since this method still uses directionality, I decided to use th McCune & Keon method. The McCune method can potentially produce a better analysis of micro-climates that a salamander might be more sensitive to.
 
 ```{r}
-# calculate heat load index (HLI) raster
-#aspect_hli <- hli(aspect) #need to handle NA's before running this
 
 
-#global(aspect, fun="notNA")
+# # calculate heat load index (HLI) raster
+# aspect_hli <- hli(aspect)
+# 
+# 
+# #global(aspect, fun="notNA")
+# crs(aspect) <- "NAD83"
+# plot(aspect)
+```
+
+```{r}
+
+# elev <- rast('data/CampRoberts_spatial_data/crob_elev')
+# 
+# elev <- project(elev, "+proj=longlat +datum=WGS84")
+# 
+# elev_hli <- hli(elev)
+# plot(elev_hli)
 ```
