@@ -22,7 +22,7 @@ library(janitor)
 
 # raster/geospatial
 library(sf)
-library(ggspatial)
+library(tmap)
 library(terra)
 library(spatialEco) #transform elev to hli
 
@@ -176,9 +176,9 @@ Only three of the brush variables available are being used. This includes downed
 ```{r}
 # create a list of dnd_dn files
 dnd_files <- list.files(here('data', 'CampRoberts_spatial_data', 'brush_IDW3rad'),
-                           pattern = '*dnd_dn_p.$', full.names = TRUE)
+                           pattern = '3rd_dnd_dn_p.$', full.names = TRUE)
 
-# for-loop reads in canopy rasters & saves to global environment
+# for-loop reads in downed wood rasters & saves to global environment
 for (i in seq_along(dnd_files)) {
   
   # read in canopy raster
@@ -208,7 +208,7 @@ plot(dnd_p3)
 litter_files <- list.files(here('data', 'CampRoberts_spatial_data', 'brush_IDW3rad'),
                            pattern = '3rd_li_dn_p.$', full.names = TRUE)
 
-# for-loop reads in canopy rasters & saves to global environment
+# for-loop reads in litter rasters & saves to global environment
 for (i in seq_along(litter_files)) {
   
   # read in canopy raster
@@ -229,4 +229,138 @@ rm(litter_files, litter_rast)
 # plot one raster to check projection
 plot(litter_p3)
 ```
+
+#### Grass cover
+```{r, eval=FALSE}
+# create a list of grass cover files
+grass_files <- list.files(here('data', 'CampRoberts_spatial_data', 'brush_IDW3rad'),
+                          pattern = '3rd_gs_dn_p.$', full.names = TRUE)
+
+# 
+
+
+
+# for-loop reads in canopy rasters & saves to global environment
+for (i in seq_along(litter_files)) {
+  
+  # read in canopy raster
+  litter_rast <- rast(litter_files[i])
+  
+  # reproject raster
+  litter_rast <- project(x = litter_rast, y = "WGS84")
+  
+  # save the updated raster
+  assign(paste0("litter_p", i), litter_rast, envir = .GlobalEnv)
+}
+
+# remove extra layer in environment
+rm(litter_files, litter_rast)
+```
+
+
+# Scratch
+Merge test
+```{r merge_test, eval=FALSE}
+canopy_full <- terra::merge(can_p1, can_p2, can_p3,
+                            can_p4, can_p5, can_p6,
+                            can_p7, can_p8)
+
+glue::glue("Canopy_p1 resolution: {res(can_p1)}
+           Canopy_p2 resolution: {res(can_p2)}
+           Canopy_p3 resolution: {res(can_p3)}
+           Canopy_p4 resolution: {res(can_p4)}")
+
+can_p1_resamp <- resample(can_p1, can_p2)
+res(can_p1_resamp) == res(can_p2)
+
+test_merge <- terra::merge(can_p1_resamp, can_p2)
+
+plot(test_merge, main = "Merge plot 1 and 2")
+plot(can_p1, main = "Plot 1 Canopy")
+plot(can_p1_resamp, main = "Resampled Plot 1 Canopy")
+plot(can_p2, main = "Plot 2 canopy")
+
+test_merge2 <- c(can_p1_resamp, can_p2)
+ext(test_merge) > ext(can_p1_resamp)
+
+test_merge3 <- mosaic(can_p1_resamp, can_p2)
+plot(test_merge3)
+```
+
+function w/for-loop test
+```{r, eval=FALSE}
+
+# Create a function that takes in a file list of rasters from plot 1-8, to reproject and combine them into a single raster
+combine_plot_raster <- function(raster_files, select_crs, select_extent){
+  
+  # create an empty raster template
+  raster_template <- rast(extent, vals = NA, crs = select_crs)
+  min_res <- Inf
+  
+  # read in all files
+  for(i in seq_along(raster_files)){
+    
+    # read in rasters individually
+    env_rast <- terra::rast(raster_files[i])
+    
+    # re-project raster
+    env_rast <- terra::project(x = env_rast, y = select_crs)
+    
+    # update resolution to minimum resolution for individual rasters
+    min_res <- min(min_res, res(env_rast)[1], res(env_rast)[2])
+    
+    # fill template raster w/transformed rasters
+    raster_template <- rast(env_rast, raster_template)
+    
+  } # END for-loop
+  
+}
+
+# Error in methods::as(x, "SpatRaster") :
+# no method or default for coercing “standardGeneric” to “SpatRaster”
+
+```
+
+
+template raster test
+```{r, eval=FALSE}
+# create a template raster using the extent from plot_outlines
+e <- ext(-121, -120, 35, 36)
+template <- rast(e)
+template <- project(template, y = "WGS84")
+
+# update to lower resolution (can_p3 in this example)
+res(can_p1) <- res(can_p3)
+res(template) <- res(can_p3)
+res(can_p2) <- res(can_p3)
+
+# merge canopy rasters for plot 3 and 1 to the template
+test_merge <- merge(template, can_p1, can_p3, can_p2)
+
+plot(test_merge)
+```
+
+
+```{r, eval = FALSE}
+tm_shape(plot_outlines) +
+  tm_polygons() +
+  tm_shape(can_p1) +
+  tm_raster() +
+  tm_shape(can_p2) +
+  tm_raster() +
+  tm_shape(can_p3) +
+  tm_raster() +
+  tm_shape(can_p4) +
+  tm_raster() +
+  tm_shape(can_p5) +
+  tm_raster() +
+  tm_shape(can_p6) +
+  tm_raster() +
+  tm_shape(can_p7) +
+  tm_raster() +
+  tm_shape(can_p8) +
+  tm_raster()
+```
+
+
 
