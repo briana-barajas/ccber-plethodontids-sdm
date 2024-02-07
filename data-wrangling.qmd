@@ -363,4 +363,18 @@ tm_shape(plot_outlines) +
 ```
 
 
+# Maxent - Plot 1
+```{r}
+## ========================================
+##            Read in Data             ----
+## ========================================
+
+# species point data
+occurence_plt1 <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs_11Jul22.shp')) %>% 
+  clean_names() %>% 
+  st_make_valid() %>% 
+  filter(plot == 1)
+
+# 
+```
 
