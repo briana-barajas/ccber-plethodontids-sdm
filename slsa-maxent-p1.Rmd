@@ -22,6 +22,12 @@ library(spatialEco) #transform elev to hli
 # modeling
 library(dismo)
 library(rsample)
+#library(rJava)
+
+
+# utils::download.file(url = "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/3.3.3k/maxent.jar", 
+#     destfile = paste0(system.file("java", package = "dismo"), 
+#         "/maxent.jar"), mode = "wb")
 ```
 
 ## Read in Data
@@ -142,21 +148,18 @@ predictor_stack <- c(veg_stack, geo_stack)
 
 
 ## Maxent
-```{r maxent, eval=FALSE}
-
-# set seed for reproducability
-set.seed(24)
-
-# split into test and train data (70/30 split)
-split <- initial_split(occurence_p1, prop = 0.7)
-train <- training(split)
-test <- testing(split)
+```{r maxent}
 
 # best attempt RIP
-maxent(dnd_dn_p1, train, removeDuplicates=TRUE)
+#maxent(canopy_p1, occurence_p1, removeDuplicates=TRUE)
 ```
+
 ```{r}
 plot(predictor_stack)
+```
+
+```{r}
+#library(rJava)
 ```
 
 
