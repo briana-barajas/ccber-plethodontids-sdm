@@ -1,5 +1,6 @@
 ---
 title: "Maxent for Slimy Salamander"
+subtitle: "Plot 1"
 author: "Briana Barajas"
 date: "`r Sys.Date()`"
 ---
@@ -151,16 +152,12 @@ predictor_stack <- c(veg_stack, geo_stack)
 ```{r maxent}
 
 # best attempt RIP
-#maxent(canopy_p1, occurence_p1, removeDuplicates=TRUE)
+maxent(canopy_p1, occurence_p1, removeDuplicates=TRUE)
 ```
 
-```{r}
-plot(predictor_stack)
-```
 
-```{r}
-#library(rJava)
-```
+
+
 
 
 
