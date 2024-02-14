@@ -26,9 +26,9 @@ library(rsample)
 library(rJava)
 
 
-utils::download.file(url = "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/3.3.3k/maxent.jar",
-    destfile = paste0(system.file("java", package = "dismo"),
-        "/maxent.jar"), mode = "wb")
+# utils::download.file(url = "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/3.3.3k/maxent.jar",
+#     destfile = paste0(system.file("java", package = "dismo"),
+#         "/maxent.jar"), mode = "wb")
 ```
 
 ## Read in Data
@@ -162,9 +162,9 @@ occurence_p1_subset <- as_Spatial(occurence_p1)
 #     destfile = paste0(system.file("java", package = "dismo"), 
 #         "/maxent.jar"), mode = "wb")  ## wb for binary file, otherwise maxent.jar can not execute
 
-
+elev1 <- raster::raster(elev)
 # best attempt RIP
-maxent(predictor_stack2, occurence_p1_subset, removeDuplicates=TRUE)
+maxent(elev1, occurence_p1_subset, removeDuplicates=TRUE)
 
 ```
 
