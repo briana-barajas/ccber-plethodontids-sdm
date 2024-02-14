@@ -125,19 +125,19 @@ dnd_dn_p1 <- project(x = dnd_dn_p1, y = "WGS84")
 li_dn_p1 <- project(x = li_dn_p1, y = "WGS84")
 gs_dn_p1 <- project(x = gs_dn_p1, y = "WGS84")
 
-# # plot a vegetation rast w/ occurence points
-# tm_shape(canopy_p1) +
-#   tm_raster() +
-#   tm_shape(outline_p1) +
-#   tm_borders(col = "black") +
-#   tm_shape(occurence_p1) +
-#   tm_dots(size = 0.3)
+# plot a vegetation rast w/ occurence points
+tm_shape(canopy_p1) +
+  tm_raster() +
+  tm_shape(outline_p1) +
+  tm_borders(col = "black") +
+  tm_shape(occurence_p1) +
+  tm_dots(size = 0.3)
 ```
 
 
 ## Prep Rasters for Maxent
 
-```{r res, eval=FALSE}
+```{r res, eval=TRUE}
 ## ========================================
 ##        Count NAs in Rasters         ----
 ## ========================================
@@ -153,56 +153,62 @@ global(hli, fun="isNA") #223402
 global(slope, fun="isNA") #223139
 
 ## ========================================
-##        Combine & Update Extent      ----
+##             Update Extent           ----
 ## ========================================
 # create raster stack for vegetation
-veg_stack <- c(canopy_p1, dnd_dn_p1, li_dn_p1, gs_dn_p1)
-
-# create raster stack for
-geo_stack <- c(elev, hli, slope)
-
-# compare extents
-ext(veg_stack) < ext(geo_stack)
-
-# crop geo_stack to match extent of veg_stack
-ext(geo_stack) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
+ext(elev) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
+ext(hli) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
+ext(slope) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
 
 
 ## ========================================
-##       Update Resolution & Stack     ----
+##         Update Resolutions         ----
 ## ========================================
 # lower resolution in all geomorphic layers
-res(geo_stack) <- res(veg_stack) # RETURNS BLANK RASTER
+elev <- resample(elev, canopy_p1)
+hli <- resample(hli, canopy_p1)
+slope <- resample(slope, canopy_p1)
 
-# stack all layers
-predictor_stack <- c(veg_stack, geo_stack)
 ```
+
 
 
 ## Running Maxent
 ```{r maxent}
 # convert predictors to raster object
+elev <- raster(elev)
+hli <- raster(hli)
+slope <- raster(slope)
+
 canopy_p1 <- raster(canopy_p1)
 dnd_dn_p1 <- raster(dnd_dn_p1)
 li_dn_p1 <- raster(li_dn_p1)
 gs_dn_p1 <- raster(gs_dn_p1)
 
-# create raster stack
-veg_test_stack <- raster::stack(canopy_p1, dnd_dn_p1,
-                                li_dn_p1, gs_dn_p1)
+# stack predictors
+predictor_stack_rast <- raster::stack(elev, hli, slope, canopy_p1, dnd_dn_p1, li_dn_p1, gs_dn_p1)
 
-# convert occurence from sf to sp
+# convert occurence points from sf to sp
 occurence_p1_sp <- as_Spatial(occurence_p1)
 
 # maxent mode, only vegetation layers
-maxent(veg_test_stack, occurence_p1_sp,
+maxent(predictor_stack_rast, occurence_p1_sp,
        removeDuplicates=TRUE)
 ```
 
 
+```{r, eval=FALSE}
+freq(is.na(predictor_stack_rast))
 
 
+plot(predictor_stack_rast, colNA="red")
 
+
+```
+
+```{r, eval=FALSE}
+plot(elev_og, colNA = "red")
+```
 
 
 
