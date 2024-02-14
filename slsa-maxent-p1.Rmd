@@ -23,12 +23,12 @@ library(spatialEco) #transform elev to hli
 # modeling
 library(dismo)
 library(rsample)
-#library(rJava)
+library(rJava)
 
 
-# utils::download.file(url = "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/3.3.3k/maxent.jar", 
-#     destfile = paste0(system.file("java", package = "dismo"), 
-#         "/maxent.jar"), mode = "wb")
+utils::download.file(url = "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/3.3.3k/maxent.jar",
+    destfile = paste0(system.file("java", package = "dismo"),
+        "/maxent.jar"), mode = "wb")
 ```
 
 ## Read in Data
@@ -148,11 +148,24 @@ predictor_stack <- c(veg_stack, geo_stack)
 ```
 
 
-## Maxent
+## Running Maxent
 ```{r maxent}
+# convert predictors to raster object
+predictor_stack2 <- raster::raster(x = predictor_stack)
+
+# convert occurence from sf to sp
+occurence_p1_subset <- as_Spatial(occurence_p1)
+
+# # download maxent.jar 3.3.3k, and place the file in the
+# # desired folder
+# utils::download.file(url = "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/3.3.3k/maxent.jar", 
+#     destfile = paste0(system.file("java", package = "dismo"), 
+#         "/maxent.jar"), mode = "wb")  ## wb for binary file, otherwise maxent.jar can not execute
+
 
 # best attempt RIP
-maxent(canopy_p1, occurence_p1, removeDuplicates=TRUE)
+maxent(predictor_stack2, occurence_p1_subset, removeDuplicates=TRUE)
+
 ```
 
 
