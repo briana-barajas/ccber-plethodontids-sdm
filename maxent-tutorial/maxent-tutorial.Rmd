@@ -2,10 +2,20 @@
 title: "Testing Maxent on Simple Data"
 subtitle: "Credit tutorial"
 date: 
-```
+---
 
 Set-up
 
 ```{r}
-
+library(dismo)
+library(tidyverse)
+library(rJava)
 ```
+
+
+```{r}
+maxent()
+```
+
+
+
