@@ -18,13 +18,13 @@ library(janitor)
 library(sf)
 library(tmap)
 library(terra)
+library(raster)
 library(spatialEco) #transform elev to hli
 
 # modeling
 library(dismo)
 library(rsample)
 library(rJava)
-
 ```
 
 ## Read in Data
@@ -91,6 +91,12 @@ occurence_p1 <- st_transform(occurence_p1, crs = "WGS84")
 # plot outlines
 outline_p1 <- st_transform(outline_p1, crs = "WGS84")
 
+# plot together to see if points fall outside of plot
+tm_shape(outline_p1) +
+  tm_polygons() +
+  tm_shape(occurence_p1) +
+  tm_dots()
+
 ## ========================================
 ##         Geomorphology Rasters       ----
 ## ========================================
@@ -102,6 +108,15 @@ slope <- project(slope, y = "WGS84")
 # create hli raster using reprojected elevation
 hli <- hli(elev)
 
+# # plot geo rast w/occurence points
+# tm_shape(slope) +
+#   tm_raster() +
+#   tm_shape(outline_p1) +
+#   tm_borders(col = "black") +
+#   tm_shape(occurence_p1) +
+#   tm_dots(size = 0.3)
+  
+
 ## ========================================
 ##            Vegetation Rasters       ----
 ## ========================================
@@ -110,12 +125,33 @@ dnd_dn_p1 <- project(x = dnd_dn_p1, y = "WGS84")
 li_dn_p1 <- project(x = li_dn_p1, y = "WGS84")
 gs_dn_p1 <- project(x = gs_dn_p1, y = "WGS84")
 
+# # plot a vegetation rast w/ occurence points
+# tm_shape(canopy_p1) +
+#   tm_raster() +
+#   tm_shape(outline_p1) +
+#   tm_borders(col = "black") +
+#   tm_shape(occurence_p1) +
+#   tm_dots(size = 0.3)
 ```
 
 
-## Stack Rasters
+## Prep Rasters for Maxent
 
-```{r res}
+```{r res, eval=FALSE}
+## ========================================
+##        Count NAs in Rasters         ----
+## ========================================
+# check NAs in vegetation rasters
+global(canopy_p1, fun="isNA")
+global(dnd_dn_p1, fun="isNA")
+global(li_dn_p1, fun="isNA")
+global(gs_dn_p1, fun="isNA")
+
+# check NAs in geo rasters
+global(elev, fun="isNA") #217986
+global(hli, fun="isNA") #223402
+global(slope, fun="isNA") #223139
+
 ## ========================================
 ##        Combine & Update Extent      ----
 ## ========================================
@@ -136,28 +172,31 @@ ext(geo_stack) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7
 ##       Update Resolution & Stack     ----
 ## ========================================
 # lower resolution in all geomorphic layers
-res(geo_stack) <- res(veg_stack)
+res(geo_stack) <- res(veg_stack) # RETURNS BLANK RASTER
 
 # stack all layers
 predictor_stack <- c(veg_stack, geo_stack)
-
 ```
 
 
 ## Running Maxent
 ```{r maxent}
 # convert predictors to raster object
-predictor_stack2 <- raster::stack(x = predictor_stack)
-plot(predictor_stack2)
+canopy_p1 <- raster(canopy_p1)
+dnd_dn_p1 <- raster(dnd_dn_p1)
+li_dn_p1 <- raster(li_dn_p1)
+gs_dn_p1 <- raster(gs_dn_p1)
+
+# create raster stack
+veg_test_stack <- raster::stack(canopy_p1, dnd_dn_p1,
+                                li_dn_p1, gs_dn_p1)
 
 # convert occurence from sf to sp
-occurence_p1_subset <- as_Spatial(occurence_p1)
+occurence_p1_sp <- as_Spatial(occurence_p1)
 
-elev1 <- raster::raster(elev)
-
-# best attempt RIP
-maxent(elev1, occurence_p1_subset, removeDuplicates=TRUE)
-
+# maxent mode, only vegetation layers
+maxent(veg_test_stack, occurence_p1_sp,
+       removeDuplicates=TRUE)
 ```
 
 
