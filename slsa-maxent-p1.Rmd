@@ -104,7 +104,7 @@ elev <- project(elev, y = "WGS84")
 slope <- project(slope, y = "WGS84")
 
 # create hli raster using reprojected elevation
-hli <- hli(elev)
+hli <- project(hli, y = "WGS84")
 
 # # plot geo rast w/occurence points
 # tm_shape(slope) +
@@ -146,7 +146,7 @@ set.names(gs_dn_p1, "grass cover")
 
 ## Prep Rasters for Maxent
 
-```{r res, eval=TRUE}
+```{r res}
 ## ========================================
 ##             Update Extent           ----
 ## ========================================
