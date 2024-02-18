@@ -25,6 +25,9 @@ library(spatialEco) #transform elev to hli
 library(dismo)
 library(rsample)
 library(rJava)
+
+# set data directory
+data_dir <- here("data", "CampRoberts_spatial_data")
 ```
 
 ## Read in Data
@@ -35,14 +38,13 @@ library(rJava)
 ## ========================================
 
 # species point data
-occurence_p1 <- st_read(here('data/CampRoberts_spatial_data/Species_pts/CR_BASP_obs_11Jul22.shp')) %>% 
+occurence_p1 <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
   clean_names() %>% 
   st_make_valid() %>% 
   filter(plot == 1)
 
 # plot outline
-outline_p1 <- st_read(here("data", "CampRoberts_spatial_data", 
-                           "plot_outlines", "Plot_1.shp")) %>% 
+outline_p1 <- st_read(here(data_dir, "plot_outlines", "Plot_1.shp")) %>% 
   st_make_valid() 
 
 ## ========================================
@@ -50,8 +52,8 @@ outline_p1 <- st_read(here("data", "CampRoberts_spatial_data",
 ## ========================================
 
 # elevation and slope rasters
-slope <- rast('data/CampRoberts_spatial_data/crob_slope')
-elev <- rast('data/CampRoberts_spatial_data/crob_elev')
+slope <- rast(here(data_dir, "old", "crob_slope"))
+elev <- rast(here(data_dir, "crob_elev"))
 
 # create hli raster
 hli <-  hli(elev)
@@ -61,20 +63,16 @@ hli <-  hli(elev)
 ## ========================================
 
 # load canopy raster
-canopy_p1 <- rast(here("data", "CampRoberts_spatial_data", "Canopy_raster",
-                       "can_fx_3r_p1"))
+canopy_p1 <- rast(here(data_dir, "Canopy_raster", "can_fx_3r_p1"))
 
 # load downed wood cover
-dnd_dn_p1 <- rast(here("data", "CampRoberts_spatial_data", "brush_IDW3rad",
-                       "3rd_dnd_dn_p1"))
+dnd_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_dnd_dn_p1"))
 
 # load litter cover percentage
-li_dn_p1 <- rast(here("data", "CampRoberts_spatial_data", "brush_IDW3rad",
-                      "3rd_li_dn_p1"))
+li_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_li_dn_p1"))
 
 # load grass cover
-gs_dn_p1 <- rast(here("data", "CampRoberts_spatial_data", "brush_IDW3rad",
-                      "3rd_gs_dn_p1"))
+gs_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_gs_dn_p1"))
 
 ```
 
@@ -132,6 +130,17 @@ tm_shape(canopy_p1) +
   tm_borders(col = "black") +
   tm_shape(occurence_p1) +
   tm_dots(size = 0.3)
+
+## ========================================
+##           Update Raster Names       ----
+## ========================================
+set.names(elev, "elevation")
+set.names(hli, "heat load index")
+set.names(slope, "slope")
+set.names(canopy_p1, "canopy cover")
+set.names(dnd_dn_p1, "downed wood cover")
+set.names(li_dn_p1, "litter cover")
+set.names(gs_dn_p1, "grass cover")
 ```
 
 
@@ -139,39 +148,54 @@ tm_shape(canopy_p1) +
 
 ```{r res, eval=TRUE}
 ## ========================================
-##        Count NAs in Rasters         ----
-## ========================================
-# check NAs in vegetation rasters
-global(canopy_p1, fun="isNA")
-global(dnd_dn_p1, fun="isNA")
-global(li_dn_p1, fun="isNA")
-global(gs_dn_p1, fun="isNA")
-
-# check NAs in geo rasters
-global(elev, fun="isNA") #217986
-global(hli, fun="isNA") #223402
-global(slope, fun="isNA") #223139
-
-## ========================================
 ##             Update Extent           ----
 ## ========================================
-# create raster stack for vegetation
-ext(elev) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
-ext(hli) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
-ext(slope) <- c(-120.831276592031, -120.827739307194, 35.7446884285381, 35.7476193216885)
+# store extent of smaller vegetation rasters
+can_extent <- ext(canopy_p1)
 
+# crop geo rasters
+elev <- crop(elev, canopy_p1)
+hli <- crop(hli, canopy_p1)
+slope <- crop(slope, canopy_p1)
+
+# update extent of geo rasters
+ext(elev) <- c(can_extent$xmin, can_extent$xmax,
+               can_extent$ymin, can_extent$ymax)
+ext(hli) <- c(can_extent$xmin, can_extent$xmax,
+               can_extent$ymin, can_extent$ymax)
+ext(slope) <- c(can_extent$xmin, can_extent$xmax,
+               can_extent$ymin, can_extent$ymax)
+
+## ========================================
+##        Count NAs in Rasters         ----
+## ========================================
+# # check NAs in vegetation rasters
+# global(canopy_p1, fun="isNA")
+# global(dnd_dn_p1, fun="isNA")
+# global(li_dn_p1, fun="isNA")
+# global(gs_dn_p1, fun="isNA")
+# 
+# # check NAs in geo rasters
+# global(elev, fun="isNA") #74043
+# global(hli, fun="isNA") #77125
+# global(slope, fun="isNA") #223139
 
 ## ========================================
 ##         Update Resolutions         ----
 ## ========================================
-# lower resolution in all geomorphic layers
+# update resolution in all geomorphic layers
 elev <- resample(elev, canopy_p1)
 hli <- resample(hli, canopy_p1)
 slope <- resample(slope, canopy_p1)
 
 ```
 
+```{r, eval=FALSE}
+# check for NA values in raster
+freq(is.na(predictor_stack_rast))
 
+plot(predictor_stack_rast, colNA="red")
+```
 
 ## Running Maxent
 ```{r maxent}
@@ -194,20 +218,6 @@ occurence_p1_sp <- as_Spatial(occurence_p1)
 # maxent mode, only vegetation layers
 maxent(predictor_stack_rast, occurence_p1_sp,
        removeDuplicates=TRUE)
-```
-
-
-```{r, eval=FALSE}
-freq(is.na(predictor_stack_rast))
-
-
-plot(predictor_stack_rast, colNA="red")
-
-
-```
-
-```{r, eval=FALSE}
-plot(elev_og, colNA = "red")
 ```
 
 
