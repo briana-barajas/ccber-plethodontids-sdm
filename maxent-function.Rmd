@@ -33,7 +33,7 @@ data_dir <- here("data", "CampRoberts_spatial_data")
 
 ## Function
 ```{r maxent-fun}
-slsa_maxent <- function(plot_number, new_crs){
+slsa_maxent <- function(plot_number, new_crs, output_location){
   
   ## ========================================
   ##            Read in Data            ----
@@ -152,7 +152,8 @@ slsa_maxent <- function(plot_number, new_crs){
   ##          Run Maxent Model           ----
   ## ========================================
   maxent(predictor_stack_rast, occurence_sp,
-       removeDuplicates=TRUE)
+       removeDuplicates=TRUE, 
+       path = output_location)
   
 }
 
@@ -162,7 +163,8 @@ slsa_maxent <- function(plot_number, new_crs){
 
 ```{r}
 # apply maxent to all plots
-slsa_maxent(plot_number = 2, new_crs = "WGS84")
+slsa_maxent(plot_number = 1 , new_crs = "WGS84",
+            output_location = here("output", "maxent", "slsa", "p2"))
 ```
 
 
