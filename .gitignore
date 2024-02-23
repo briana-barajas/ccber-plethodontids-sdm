@@ -5,3 +5,6 @@
 data/
 *.html
 *_files/
+outputs/
+.DS_Store
+.DS_Store/
