@@ -9,6 +9,7 @@ date: "`r Sys.Date()`"
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
+## MaxEnt Function
 ```{r packages, include=FALSE}
 # wrangling
 library(tidyverse)
@@ -145,27 +146,22 @@ slsa_maxent <- function(plot_number, new_crs, output_location){
   predictor_stack_rast <- raster::stack(elev, hli, slope, canopy, 
                                         dnd_dn, li_dn, gs_dn)
   
+  # store raster for prediction step
+  assign(x = paste0("pred_stack_rast_p", plot_number), 
+         value = predictor_stack_rast, envir = .GlobalEnv)
+  
   # convert occurence points ----
   occurence_sp <- as_Spatial(occurence)
   
+
   ## ========================================
   ##          Run Maxent Model           ----
   ## ========================================
   maxent(predictor_stack_rast, occurence_sp,
-       removeDuplicates=TRUE, 
-       path = output_location)
+         removeDuplicates=TRUE, 
+         path = output_location)
   
 }
 
 ```
-
-
-
-```{r}
-# apply maxent to all plots
-slsa_maxent(plot_number = 1 , new_crs = "WGS84",
-            output_location = here("output", "maxent", "slsa", "p2"))
-```
-
-
 
