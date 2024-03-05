@@ -62,6 +62,24 @@ for (i in seq_along(plot_outline_files)) {
 }
 ```
 
+```{r}
+
+for (i in 1:8) {
+  
+  occurence <- st_read(here(data_dir, "Species_pts",
+                            "CR_BASP_obs_11Jul22.shp")) %>% 
+    clean_names() %>% 
+    st_make_valid() %>% 
+    filter(plot == i)
+  
+  occurence <- st_transform(occurence, "WGS84")
+  
+  assign(x = paste0("occurence_p", i), value = occurence,
+         envir = .GlobalEnv)
+}
+
+```
+
 
 ## Create prediction maps
 
@@ -110,55 +128,95 @@ tm_shape(pred_map_p1) +
   tm_raster() +
   tm_title(text = "Plot 1 Suitability") +
   tm_shape(outline_p1) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p1) +
+  tm_dots()
+
+# tmap_save(tm = mp_1, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_1_predict.png"))
 
 ## ......................Plot 2....................
 tm_shape(pred_map_p2) +
   tm_raster() +
   tm_title(text = "Plot 2 Suitability") +
   tm_shape(outline_p2) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p2) +
+  tm_dots()
+
+# tmap_save(tm = mp_2, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_2_predict.png"))
 
 ## ......................Plot 3....................
 tm_shape(pred_map_p3) +
   tm_raster() +
   tm_title(text = "Plot 3 Suitability") +
   tm_shape(outline_p3) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p3) +
+  tm_dots()
+
+# tmap_save(tm = mp_3, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_3_predict.png"))
 
 ## ......................Plot 4....................
 tm_shape(pred_map_p4) +
   tm_raster() +
   tm_title(text = "Plot 4 Suitability") +
   tm_shape(outline_p4) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p4) +
+  tm_dots()
+
+# tmap_save(mp_4, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_4_predict.png"))
 
 ## ......................Plot 5....................
 tm_shape(pred_map_p5) +
   tm_raster() +
   tm_title(text = "Plot 5 Suitability") +
   tm_shape(outline_p5) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p5) +
+  tm_dots()
+
+# tmap_save(mp_5, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_5_predict.png"))
 
 ## ......................Plot 6....................
 tm_shape(pred_map_p6) +
   tm_raster() +
   tm_title(text = "Plot 6 Suitability") +
   tm_shape(outline_p6) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p6) +
+  tm_dots()
+
+# tmap_save(mp_6, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_6_predict.png"))
 
 ## ......................Plot 7....................
 tm_shape(pred_map_p7) +
   tm_raster() +
   tm_title(text = "Plot 7 Suitability") +
   tm_shape(outline_p7) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p7) +
+  tm_dots()
+
+# tmap_save(mp_7, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_7_predict.png"))
 
 ## ......................Plot 8....................
 tm_shape(pred_map_p8) +
   tm_raster() +
   tm_title(text = "Plot 8 Suitability") +
   tm_shape(outline_p8) +
-  tm_borders()
+  tm_borders() +
+  tm_shape(occurence_p8) +
+  tm_dots()
+
+# tmap_save(mp_8, filename = here("outputs", "default-maxent", 
+#                             "prediction_maps", "plot_8_predict.png"))
 ```
 
