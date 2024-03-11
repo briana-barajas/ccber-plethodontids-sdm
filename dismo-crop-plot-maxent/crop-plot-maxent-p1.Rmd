@@ -1,0 +1,244 @@
+---
+title: "Maxent for Slimy Salamander"
+subtitle: "Plot 1 - Cropping data outside of plot boundaries"
+author: "Briana Barajas"
+date: "`r Sys.Date()`"
+---
+```{r set-up, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r packages, include=FALSE}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+library(raster)
+library(spatialEco) #transform elev to hli
+
+# modeling
+library(dismo)
+library(rsample)
+library(rJava)
+
+# set data directory
+data_dir <- here("data", "CampRoberts_spatial_data")
+```
+
+## Read in Data
+
+```{r read}
+## ========================================
+##            Vector Data              ----
+## ========================================
+
+# species point data
+occurence_p1 <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  clean_names() %>% 
+  st_make_valid() %>% 
+  filter(plot == 1)
+
+# plot outline
+outline_p1 <- st_read(here(data_dir, "plot_outlines", "Plot_1.shp")) %>% 
+  st_make_valid() 
+
+## ========================================
+##         Geomorphology Rasters       ----
+## ========================================
+
+# elevation and slope rasters
+slope <- rast(here(data_dir, "old", "crob_slope"))
+elev <- rast(here(data_dir, "crob_elev"))
+
+# create hli raster
+hli <-  hli(elev)
+
+## ========================================
+##            Vegetation Rasters       ----
+## ========================================
+
+# load canopy raster
+canopy_p1 <- rast(here(data_dir, "Canopy_raster", "can_fx_3r_p1"))
+
+# load downed wood cover
+dnd_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_dnd_dn_p1"))
+
+# load litter cover percentage
+li_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_li_dn_p1"))
+
+# load grass cover
+gs_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_gs_dn_p1"))
+
+```
+
+## Reproject Data
+
+```{r reproject}
+## ========================================
+##            Vector Data              ----
+## ========================================
+
+# occurence points
+occurence_p1 <- st_transform(occurence_p1, crs = "WGS84") 
+
+# plot outlines
+outline_p1 <- st_transform(outline_p1, crs = "WGS84")
+
+# plot together to see if points fall outside of plot
+tm_shape(outline_p1) +
+  tm_polygons() +
+  tm_shape(occurence_p1) +
+  tm_dots()
+
+## ========================================
+##         Geomorphology Rasters       ----
+## ========================================
+
+# reproject elevation and slope raster
+elev <- project(elev, y = "WGS84")
+slope <- project(slope, y = "WGS84")
+
+# create hli raster using reprojected elevation
+hli <- project(hli, y = "WGS84")
+
+# # plot geo rast w/occurence points
+# tm_shape(slope) +
+#   tm_raster() +
+#   tm_shape(outline_p1) +
+#   tm_borders(col = "black") +
+#   tm_shape(occurence_p1) +
+#   tm_dots(size = 0.3)
+  
+
+## ========================================
+##            Vegetation Rasters       ----
+## ========================================
+canopy_p1 <- project(x = canopy_p1, y = "WGS84")
+dnd_dn_p1 <- project(x = dnd_dn_p1, y = "WGS84")
+li_dn_p1 <- project(x = li_dn_p1, y = "WGS84")
+gs_dn_p1 <- project(x = gs_dn_p1, y = "WGS84")
+
+# plot a vegetation rast w/ occurence points
+# tm_shape(canopy_p1) +
+#   tm_raster() +
+#   tm_shape(outline_p1) +
+#   tm_borders(col = "black") +
+#   tm_shape(occurence_p1) +
+#   tm_dots(size = 0.3)
+
+## ========================================
+##           Update Raster Names       ----
+## ========================================
+set.names(elev, "elevation")
+set.names(hli, "heat load index")
+set.names(slope, "slope")
+set.names(canopy_p1, "canopy cover")
+set.names(dnd_dn_p1, "downed wood cover")
+set.names(li_dn_p1, "litter cover")
+set.names(gs_dn_p1, "grass cover")
+```
+
+## Crop occurences to fit plot outline (NEW)
+```{r}
+# crop to keep points within outlines
+occurence_p1 <- st_filter(occurence_p1, outline_p1,
+                          .predicate = st_within)
+
+# map to see points are within outlines
+tm_shape(outline_p1) +
+  tm_polygons() +
+  tm_shape(occurence_p1) +
+  tm_dots()
+```
+
+
+## Prep Rasters for Maxent
+
+```{r res}
+## ========================================
+##             Update Extent           ----
+## ========================================
+# crop geo rasters using plot outlines
+elev <- crop(elev, outline_p1, mask = TRUE)
+hli <- crop(hli, outline_p1, mask = TRUE)
+slope <- crop(slope, outline_p1, mask = TRUE)
+
+# crop vegetation raster using plot outline 
+canopy_p1 <-crop(canopy_p1, outline_p1, mask = TRUE)
+dnd_dn_p1 <- crop(dnd_dn_p1, outline_p1, mask = TRUE)
+li_dn_p1 <- crop(li_dn_p1, outline_p1, mask = TRUE)
+gs_dn_p1 <- crop(gs_dn_p1, outline_p1, mask = TRUE)
+
+# store extent of smaller vegetation rasters
+can_extent <- ext(canopy_p1)
+
+# update extent of geo rasters
+ext(elev) <- c(can_extent$xmin, can_extent$xmax,
+               can_extent$ymin, can_extent$ymax)
+ext(hli) <- c(can_extent$xmin, can_extent$xmax,
+               can_extent$ymin, can_extent$ymax)
+ext(slope) <- c(can_extent$xmin, can_extent$xmax,
+               can_extent$ymin, can_extent$ymax)
+
+## ========================================
+##        Count NAs in Rasters         ----
+## ========================================
+# # check NAs in vegetation rasters
+# global(canopy_p1, fun="isNA")
+# global(dnd_dn_p1, fun="isNA")
+# global(li_dn_p1, fun="isNA")
+# global(gs_dn_p1, fun="isNA")
+# 
+# # check NAs in geo rasters
+# global(elev, fun="isNA") #74043
+# global(hli, fun="isNA") #77125
+# global(slope, fun="isNA") #223139
+
+## ========================================
+##         Update Resolutions         ----
+## ========================================
+# update resolution in all geomorphic layers
+elev <- resample(elev, canopy_p1)
+hli <- resample(hli, canopy_p1)
+slope <- resample(slope, canopy_p1)
+
+```
+
+```{r, eval=FALSE}
+# check for NA values in raster
+freq(is.na(predictor_stack_rast))
+
+plot(predictor_stack_rast, colNA="red")
+```
+
+## Running Maxent
+```{r maxent}
+# convert predictors to raster object
+elev <- raster(elev)
+hli <- raster(hli)
+slope <- raster(slope)
+
+canopy_p1 <- raster(canopy_p1)
+dnd_dn_p1 <- raster(dnd_dn_p1)
+li_dn_p1 <- raster(li_dn_p1)
+gs_dn_p1 <- raster(gs_dn_p1)
+
+# stack predictors
+predictor_stack_rast <- raster::stack(elev, hli, slope, canopy_p1, dnd_dn_p1, li_dn_p1, gs_dn_p1)
+
+# convert occurence points from sf to sp
+occurence_p1_sp <- as_Spatial(occurence_p1)
+
+# maxent mode, only vegetation layers
+maxent(predictor_stack_rast, occurence_p1_sp,
+       removeDuplicates=TRUE)
+```
+
+
+
+

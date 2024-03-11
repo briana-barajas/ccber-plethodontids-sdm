@@ -1,8 +1,8 @@
-## ----set-up, include=FALSE----------------------------------------------------------------------------------------
+## ----set-up, include=FALSE--------------------------------------------------------------
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 
 
-## ----packages, include=FALSE--------------------------------------------------------------------------------------
+## ----packages, include=FALSE------------------------------------------------------------
 # wrangling
 library(tidyverse)
 library(here)
@@ -24,8 +24,8 @@ library(rJava)
 data_dir <- here("data", "CampRoberts_spatial_data")
 
 
-## ----maxent-fun---------------------------------------------------------------------------------------------------
-slsa_maxent <- function(plot_number, new_crs, output_location){
+## ----maxent-fun-------------------------------------------------------------------------
+slsa_crop_maxent <- function(plot_number, new_crs, output_location){
   
   ## ========================================
   ##            Read in Data            ----
@@ -94,6 +94,24 @@ slsa_maxent <- function(plot_number, new_crs, output_location){
   set.names(gs_dn, "grass cover")
   
   ## ========================================
+  ##      Filter to data within plot     ----
+  ## ========================================
+  # filter occurrence points ----
+  occurence <- st_filter(occurence, outline,
+                         .predicate = st_within)
+  
+  # crop geo rasters using plot outlines
+  elev <- crop(elev, outline, mask = TRUE)
+  hli <- crop(hli, outline, mask = TRUE)
+  slope <- crop(slope, outline, mask = TRUE)
+  
+  # crop vegetation raster using plot outline 
+  canopy <-crop(canopy, outline, mask = TRUE)
+  dnd_dn <- crop(dnd_dn, outline, mask = TRUE)
+  li_dn <- crop(li_dn, outline, mask = TRUE)
+  gs_dn <- crop(gs_dn, outline, mask = TRUE)
+  
+  ## ========================================
   ##        Prep rasters to stack        ----
   ## ========================================
   
@@ -144,7 +162,7 @@ slsa_maxent <- function(plot_number, new_crs, output_location){
   # convert occurence points ----
   occurence_sp <- as_Spatial(occurence)
   
-
+  
   ## ========================================
   ##          Run Maxent Model           ----
   ## ========================================
@@ -154,4 +172,8 @@ slsa_maxent <- function(plot_number, new_crs, output_location){
   
 }
 
+
+
+## ---------------------------------------------------------------------------------------
+slsa_crop_maxent(plot_number = 2, new_crs = "WGS84")
 
