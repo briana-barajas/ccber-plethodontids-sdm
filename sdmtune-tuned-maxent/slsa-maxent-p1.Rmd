@@ -208,7 +208,7 @@ predictor_stack_rast <- c(elev, hli, slope, canopy_p1, dnd_dn_p1, li_dn_p1, gs_d
 # create background points using raster stack
 bg_points <- terra::spatSample(predictor_stack_rast,
                                size = 1000,
-                               replace = TRUE,
+                               replace = FALSE,
                                xy = TRUE)
 
 bg_coords <- bg_points %>% dplyr::select(c(x,y))
@@ -239,7 +239,9 @@ gs <- gridSearch(maxnet_model,
 head(gs@results[order(-gs@results$test_AUC), ])  # Best combinations
 
 # Use the genetic algorithm instead with optimizeModel
-om <- optimizeModel(maxnet_model, hypers = h_tune, metric = "auc", test = test, seed = 4)
+om <- optimizeModel(maxnet_model, hypers = h_tune, 
+                    metric = "auc", test = test, seed = 4)
+
 head(om@results)  # Best combinations
 ```
 

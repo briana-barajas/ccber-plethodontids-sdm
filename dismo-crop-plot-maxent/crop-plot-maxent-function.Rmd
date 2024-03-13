@@ -184,6 +184,6 @@ slsa_crop_maxent <- function(plot_number, new_crs, output_location){
 ```
 
 ```{r}
-slsa_crop_maxent(plot_number = 2, new_crs = "WGS84")
+# run maxent for all plots
+slsa_crop_maxent(plot_number = 1, new_crs = "WGS84")
 ```
-
