@@ -1,8 +1,8 @@
 ---
 title: "Using SDMtune to Tune MaxEnt"
-subtitle: "Plot 1"
+subtitle: "Plot 1 - Tuning Defaults from Example Code"
 author: "Briana Barajas"
-date: "`r Sys.Date()`"
+date: 2024-03-12
 ---
 
 ```{r set-up, include=FALSE}
