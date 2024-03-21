@@ -1,0 +1,191 @@
+---
+title: "Environmental Variable Raster Stack"
+subtitle: "Using a function to create prediction rasters for all plots"
+author: "Briana Barajas"
+date: 2024-020-12
+---
+
+```{r packages, include=FALSE}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+library(raster)
+library(spatialEco) #transform elev to hli
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+data_dir <- here("data", "CampRoberts_spatial_data")
+output_dir <- here("data", "updated-rasters")
+```
+
+## CreateFunction for Raster Manipulation
+
+```{r}
+createPredStack <- function(plot_number, new_crs, path){
+  
+  ## ========================================
+  ##            Read in Data            ----
+  ## ========================================
+  
+  # point data ----
+  occurence <- st_read(here(data_dir, "Species_pts",
+                            "CR_BASP_obs_11Jul22.shp")) %>% 
+    clean_names() %>% 
+    st_make_valid() %>% 
+    filter(plot == plot_number)
+  
+  # plot outline ----
+  outline <- st_read(here(data_dir, "plot_outlines", 
+                          paste0("Plot_", plot_number, ".shp"))) %>%
+    st_make_valid()
+  
+  # geomorphology rasters ----
+  slope <- rast(here(data_dir, "old", "crob_slope"))
+  elev <- rast(here(data_dir, "crob_elev"))
+  
+  # create hli raster ----
+  hli <-  hli(elev)
+  
+  # vegetation rasters ----
+  canopy <- rast(here(data_dir, "Canopy_raster",
+                      paste0("can_fx_3r_p", plot_number)))
+  
+  dnd_dn <- rast(here(data_dir, "brush_IDW3rad",
+                      paste0("3rd_dnd_dn_p", plot_number)))
+  
+  li_dn <- rast(here(data_dir, "brush_IDW3rad",
+                     paste0("3rd_li_dn_p", plot_number)))
+  
+  gs_dn <- rast(here(data_dir, "brush_IDW3rad",
+                     paste0("3rd_gs_dn_p", plot_number)))
+  
+  ## ========================================
+  ##            Reproject Data           ----
+  ## ========================================
+  
+  # reproject occurrence points ----
+  occurence <- st_transform(occurence, crs = new_crs)
+  
+  # reproject plot outline ----
+  outline <- st_transform(outline, crs = new_crs)
+  
+  # geomorphology rast reprojection ----
+  elev <- project(elev, y = new_crs)
+  slope <- project(slope, y = new_crs)
+  hli <- project(hli, y = new_crs)
+  
+  # veg rast reprojection ----
+  canopy <- project(x = canopy, y = new_crs)
+  dnd_dn <- project(x = dnd_dn, y = new_crs)
+  li_dn <- project(x = li_dn, y = new_crs)
+  gs_dn <- project(x = gs_dn, y = new_crs)
+  
+  # update raster names ----
+  set.names(elev, "elevation")
+  set.names(hli, "heat load index")
+  set.names(slope, "slope")
+  set.names(canopy, "canopy cover")
+  set.names(dnd_dn, "downed wood cover")
+  set.names(li_dn, "litter cover")
+  set.names(gs_dn, "grass cover")
+  
+  ## ========================================
+  ##           Update ext and res        ----
+  ## ========================================
+  
+  # save extent ----
+  can_extent <- ext(canopy)
+  
+  # crop geomorphology rasters ----
+  elev <- crop(elev, canopy)
+  hli <- crop(hli, canopy)
+  slope <- crop(slope, canopy)
+  
+  # update geo raster ext ----
+  ext(elev) <- c(can_extent$xmin, can_extent$xmax,
+                 can_extent$ymin, can_extent$ymax)
+  
+  ext(hli) <- c(can_extent$xmin, can_extent$xmax,
+                can_extent$ymin, can_extent$ymax)
+  
+  ext(slope) <- c(can_extent$xmin, can_extent$xmax,
+                  can_extent$ymin, can_extent$ymax)
+  
+  # update resolution in all geomorphic layers ----
+  elev <- resample(elev, canopy)
+  hli <- resample(hli, canopy)
+  slope <- resample(slope, canopy)
+  
+  ## ========================================
+  ##            Export Veg Rasters       ----
+  ## ========================================
+  # export canopy raster ----
+  writeRaster(x = canopy, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/canopy_p",
+                                plot_number, ".asc"))
+
+  # export downed-wood raster ----
+  writeRaster(x = dnd_dn, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/dnd_dn_p",
+                                plot_number, ".asc"))
+  
+  # export litter cover raster ----
+  writeRaster(x = li_dn, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/li_dn_p",
+                                plot_number, ".asc"))
+  
+  # export grass cover raster ----
+  writeRaster(x = gs_dn, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/gs_dn_p",
+                                plot_number, ".asc"))
+  
+  ## ========================================
+  ##            Export Veg Rasters       ----
+  ## ========================================
+  
+  # export elevation raster ----
+  writeRaster(x = elev, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/elev_p",
+                                plot_number, ".asc"))
+  
+  # export heat load raster ----
+  writeRaster(x = hli, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/hli_p",
+                                plot_number, ".asc"))
+  
+  # export slope raster ----
+  writeRaster(x = slope, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/plot",
+                                plot_number, "/slope_p",
+                                plot_number, ".asc"))
+}
+```
+
+## Save New Rasters for All Plots
+
+```{r, eval=FALSE}
+for (i in seq(1:8)) {
+  createPredStack(plot_number = i,
+                new_crs = "WGS84",
+                path = output_dir)
+  }
+```
+
+
+
