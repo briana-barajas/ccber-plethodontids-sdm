@@ -54,8 +54,8 @@ occurences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) 
 ```
 
 
-## Running Maxent
-For this run, I will still be following tuning all hyper parameters for Maxent, as it is done in the SDMtune documentation. A step for k-fold cross-validation will be added to potentially improve model performance. Additionally, for the Maxent model the metric will be switched to "AICc" instead of "AUC". Note that AICc can only be used for Maxent models, and is not indicative of predictive performance.
+## Maxent Using AUC
+For this run, I tuned all the hyper parameters for Maxent as it is done in the `{SDMtune}` documentation. I added cross validation folds, to the standards `gridSearch` function and compared it to the `optimizeModel` function.
 
 ```{r}
 set.seed(479)
@@ -107,13 +107,20 @@ cv_folds <- randomFolds(train, k = 4, only_presence = TRUE)
 # select hyper parameters for testing
 param_tune <- list(
   reg = seq(0.1, 3, 0.1), # regularization multiplier
-  fc = c("lq", "lh",   # feature class combination
-         "lqp", "lqph", "lqpht"))
+  fc = c("lq", "lh", "lqp", "lqph", "lqpht")) # feature class combination
 
 # train maxnet model
 maxnet_model <- train(method = "Maxnet",
                       folds = cv_folds,
                       data = train)
+
+# # remove variebles with importance less than 2% IF it doesn't decrease model performance
+# # AUC improves by only 0.01 when using reduced variable mode
+# maxnet_model_red <- reduceVar(maxnet_model,
+#                     th = 2,
+#                     metric = "auc",
+#                     test = test,
+#                     use_jk = TRUE)
 
 ## ========================================
 ##           Maxnet Model Results      ----
@@ -127,9 +134,31 @@ grid_res <- gridSearch(maxnet_model,
 # view results
 head(grid_res@results[order(-grid_res@results$test_AUC), ])
 
+
+
 ```
 
+## Maxent Using AICC
+For this model, I will be using "AICc" instead of "AUC". Note that AICc can only be used for Maxent models, and is not indicative of predictive performance. However, given the small sample size in many of these plots 
 
+```{r}
+# train maxnet model
+maxnet_model2 <- train(method = "Maxnet",
+                      data = train)
+
+# find best hyper parameter combinations
+grid_res2 <- gridSearch(maxnet_model2,
+                       hypers = param_tune,
+                       metric = "aicc",
+                       env = predictor_stack_rast,
+                       save_models = FALSE)
+
+# view results
+head(grid_res2@results[order(grid_res2@results$AICc), ])
+
+View(grid_res2@results)
+
+```
 
 ## Running the Boosted Regression Model
 
@@ -139,9 +168,7 @@ head(grid_res@results[order(-grid_res@results$test_AUC), ])
 ## ========================================
 # select hyper parameters for testing
 brt_param_tune <- list(
-  n.trees = seq(10, 300, 10),
-  interaction.depth = 
-)
+  n.trees = seq(10, 300, 10))
 
 # train maxnet model
 brt_model <- train(method = "BRT",
@@ -159,6 +186,9 @@ brt_grid_res <- gridSearch(brt_model,
 
 # view results
 head(brt_grid_res@results[order(-brt_grid_res@results$test_AUC), ])
+
+head(grid_res@results[order(-grid_res@results$test_AUC), ])
+
 
 ```
 
