@@ -92,12 +92,12 @@ createPredStack <- function(plot_number, new_crs, path){
   
   # update raster names ----
   set.names(elev, "elevation")
-  set.names(hli, "heat load index")
+  set.names(hli, "heat_load_index")
   set.names(slope, "slope")
-  set.names(canopy, "canopy cover")
-  set.names(dnd_dn, "downed wood cover")
-  set.names(li_dn, "litter cover")
-  set.names(gs_dn, "grass cover")
+  set.names(canopy, "canopy_cover")
+  set.names(dnd_dn, "downed_wood_cover")
+  set.names(li_dn, "litter_cover")
+  set.names(gs_dn, "grass_cover")
   
   ## ========================================
   ##           Update ext and res        ----
@@ -172,9 +172,9 @@ createPredStack <- function(plot_number, new_crs, path){
 
 ## Save New Rasters for All Plots
 
-```{r, eval=FALSE}
+```{r}
 for (i in seq(1:8)) {
-  createPredStack(plot_number = 1,
+  createPredStack(plot_number = i,
                   new_crs = "WGS84",
                   path = output_dir)
 }
