@@ -131,49 +131,42 @@ createPredStack <- function(plot_number, new_crs, path){
   ## ========================================
   # export canopy raster ----
   writeRaster(x = canopy, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/canopy_p",
-                                plot_number, ".asc"))
+              filename = paste0(path, "/canopy/plot",
+                                plot_number, "/canopy.asc"))
 
   # export downed-wood raster ----
   writeRaster(x = dnd_dn, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/dnd_dn_p",
-                                plot_number, ".asc"))
-  
+              filename = paste0(path, "/dnd_dn/plot",
+                                plot_number, "/dnd_dn.asc"))
+
   # export litter cover raster ----
   writeRaster(x = li_dn, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/li_dn_p",
-                                plot_number, ".asc"))
-  
+              filename = paste0(path, "/li_dn/plot",
+                                plot_number, "/li_dn.asc"))
+
   # export grass cover raster ----
   writeRaster(x = gs_dn, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/gs_dn_p",
-                                plot_number, ".asc"))
-  
+              filename = paste0(path, "/gs_dn/plot",
+                                plot_number, "/gs_dn.asc"))
+
   ## ========================================
   ##            Export Veg Rasters       ----
   ## ========================================
-  
+
   # export elevation raster ----
   writeRaster(x = elev, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/elev_p",
-                                plot_number, ".asc"))
-  
+              filename = paste0(path, "/elev/plot",
+                                plot_number, "/elev.asc"))
+
   # export heat load raster ----
   writeRaster(x = hli, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/hli_p",
-                                plot_number, ".asc"))
-  
+              filename = paste0(path, "/hli/plot",
+                                plot_number, "/hli.asc"))
+
   # export slope raster ----
   writeRaster(x = slope, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/plot",
-                                plot_number, "/slope_p",
-                                plot_number, ".asc"))
+              filename = paste0(path, "/slope/plot",
+                                plot_number, "/slope.asc"))
 }
 ```
 
@@ -181,10 +174,10 @@ createPredStack <- function(plot_number, new_crs, path){
 
 ```{r, eval=FALSE}
 for (i in seq(1:8)) {
-  createPredStack(plot_number = i,
-                new_crs = "WGS84",
-                path = output_dir)
-  }
+  createPredStack(plot_number = 1,
+                  new_crs = "WGS84",
+                  path = output_dir)
+}
 ```
 
 
