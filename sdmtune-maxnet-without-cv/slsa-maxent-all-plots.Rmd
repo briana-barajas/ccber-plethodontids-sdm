@@ -1,0 +1,127 @@
+---
+title: "Using SDMtune to Tune MaxEnt"
+subtitle: "Default SDMtune metrics for all plots"
+author: "Briana Barajas"
+date: 2024-04-01
+---
+
+```{r}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+## Preparation
+
+```{r packages, include=FALSE}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+output_dir <- here("data", "updated-rasters")
+data_dir <- here("data", "CampRoberts_spatial_data")
+```
+
+
+## Read in Data
+
+Read in all raster and vector data using a for-loop 
+```{r}
+for (i in 1:8) {
+  
+  # read in environmental rasters
+  canopy <- rast(here(output_dir, "canopy", paste0("plot", i), "canopy.asc"))
+  dnd_dn <- rast(here(output_dir, "dnd_dn", paste0("plot", i), "dnd_dn.asc"))
+  elev <- rast(here(output_dir, "elev", paste0("plot", i), "elev.asc"))
+  gs_dn <- rast(here(output_dir, "gs_dn", paste0("plot", i), "gs_dn.asc"))
+  hli <- rast(here(output_dir, "hli", paste0("plot", i), "hli.asc"))
+  li_dn <- rast(here(output_dir, "li_dn", paste0("plot", i), "li_dn.asc"))
+  slope <- rast(here(output_dir, "slope", paste0("plot", i), "slope.asc"))
+  
+  # create unique predictor raster stack for each plot
+  predictor_stack_rast <- c(elev, hli, slope, canopy, dnd_dn, li_dn, gs_dn)
+  assign(paste0("predictor_stack_rast_p", i), predictor_stack_rast, envir = .GlobalEnv)
+  rm(elev, hli, slope, canopy, dnd_dn, li_dn, gs_dn)
+  
+  # read in occurrence data
+  
+  assign(paste0("occurence_p", i), occurences, envir = .GlobalEnv)
+  rm(occurences)
+  
+}
+```
+
+## Run Maxent for all plots
+
+Started by running Maxent for all plots, using AUC as the metric for model assessment. 
+```{r}
+# create a list of occurences
+occurence_list <- c(occurence_p1, occurence_p2, occurence_p3, occurence_p4,
+                    occurence_p5, occurence_p6, occurence_p7, occurence_p8)
+
+
+for (i in occurence_list) {
+  # isolate latitude and longitude columns
+  p_coords <- i
+    # st_drop_geometry() %>%
+    # rename(y = latitude, x = longitude) %>%
+    # dplyr::select(x,y)
+}
+```
+
+```{r}
+# isolate occurence latitude and longitude
+p_coords <- occurence_p1 %>% 
+  st_drop_geometry() %>% 
+  rename(y = latitude,
+         x = longitude) %>% 
+    dplyr::select(x,y)
+
+# combine environmental rasters
+predictor_stack_rast <- c(elev, hli, slope, canopy_p1, dnd_dn_p1, li_dn_p1, gs_dn_p1)
+
+# create background points using raster stack
+bg_points <- terra::spatSample(predictor_stack_rast,
+                               size = 1000,
+                               replace = FALSE,
+                               xy = TRUE)
+
+bg_coords <- bg_points %>% dplyr::select(c(x,y))
+
+# create SWD object
+swd_object <- prepareSWD(species = "slender salamander",
+                         p = p_coords,
+                         a = bg_coords,
+                         env = predictor_stack_rast)
+
+# split data into test and train
+datasets <- trainValTest(swd_object, test = 0.2, only_presence = TRUE, seed = 25)
+train <- datasets[[1]]
+test <- datasets[[2]]
+
+# train maxent model
+maxnet_model <- train(method = "Maxnet", data = train)
+
+# select the hyperparameters to test
+h_tune <- list(reg = seq(0.1, 3, 0.1), fc = c("lq", "lh", "lqp", "lqph", "lqpht"))
+
+# test all the possible combinations with gridSearch
+gs <- gridSearch(maxnet_model, 
+                 hypers = h_tune, 
+                 metric = "auc", 
+                 test = test)
+
+head(gs@results[order(-gs@results$test_AUC), ])  # Best combinations
+```
+
+
