@@ -28,6 +28,10 @@ library(rJava)
 # set data directory
 output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
+
+# set plot number
+plot_name <- "plot1"
+plot_number <- 1
 ```
 
 
@@ -35,13 +39,13 @@ data_dir <- here("data", "CampRoberts_spatial_data")
 
 ```{r, results='hide'}
 # read environmental rasters
-canopy <- rast(here(output_dir, "canopy", "plot1", "canopy.asc"))
-dnd_dn <- rast(here(output_dir, "dnd_dn", "plot1", "dnd_dn.asc"))
-elev <- rast(here(output_dir, "elev", "plot1", "elev.asc"))
-gs_dn <- rast(here(output_dir, "gs_dn", "plot1", "gs_dn.asc"))
-hli <- rast(here(output_dir, "hli", "plot1", "hli.asc"))
-li_dn <- rast(here(output_dir, "li_dn", "plot1", "li_dn.asc"))
-slope <- rast(here(output_dir, "slope", "plot1", "slope.asc"))
+canopy <- rast(here(output_dir, "canopy", plot_name, "canopy.asc"))
+dnd_dn <- rast(here(output_dir, "dnd_dn", plot_name, "dnd_dn.asc"))
+elev <- rast(here(output_dir, "elev", plot_name, "elev.asc"))
+gs_dn <- rast(here(output_dir, "gs_dn", plot_name, "gs_dn.asc"))
+hli <- rast(here(output_dir, "hli", plot_name, "hli.asc"))
+li_dn <- rast(here(output_dir, "li_dn", plot_name, "li_dn.asc"))
+slope <- rast(here(output_dir, "slope", plot_name, "slope.asc"))
 
 
 # combine environmental rasters
@@ -50,7 +54,8 @@ predictor_stack_rast <- c(elev, hli, slope, canopy, dnd_dn, li_dn, gs_dn)
 # read in occurence data
 occurences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
   st_make_valid() %>% 
-  clean_names()
+  clean_names() %>% 
+  filter(plot == plot_number)
 ```
 
 
@@ -141,7 +146,7 @@ head(grid_res@results[order(-grid_res@results$test_AUC), ])
 ## Maxent Using AICC
 For this model, I will be using "AICc" instead of "AUC". Note that AICc can only be used for Maxent models, and is not indicative of predictive performance. However, given the small sample size in many of these plots 
 
-```{r}
+```{r, eval=FALSE}
 # train maxnet model
 maxnet_model2 <- train(method = "Maxnet",
                       data = train)
