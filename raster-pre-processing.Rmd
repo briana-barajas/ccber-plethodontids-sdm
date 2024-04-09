@@ -31,7 +31,7 @@ output_dir <- here("data", "updated-rasters")
 ## CreateFunction for Raster Manipulation
 
 ```{r}
-createPredStack <- function(plot_number, new_crs, path){
+createPredStack <- function(plot_number, new_crs = "WGS84", path){
   
   ## ========================================
   ##            Read in Data            ----
@@ -175,7 +175,6 @@ createPredStack <- function(plot_number, new_crs, path){
 ```{r}
 for (i in seq(1:8)) {
   createPredStack(plot_number = i,
-                  new_crs = "WGS84",
                   path = output_dir)
 }
 ```
