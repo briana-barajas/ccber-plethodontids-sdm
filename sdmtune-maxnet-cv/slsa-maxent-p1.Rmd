@@ -170,7 +170,7 @@ View(grid_res2@results)
 
 ## Running the Boosted Regression Model
 
-```{r}
+```{r, eval=FALSE}
 ## ========================================
 ##           BRT Model Tuning       ----
 ## ========================================

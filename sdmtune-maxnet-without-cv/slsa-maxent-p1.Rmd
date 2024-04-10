@@ -5,7 +5,7 @@ author: "Briana Barajas"
 date: 2024-03-12
 ---
 
-```{r set-up, include=FALSE}
+```{r}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
 ```
 
@@ -19,8 +19,6 @@ library(janitor)
 library(sf)
 library(tmap)
 library(terra)
-library(raster)
-library(spatialEco) #transform elev to hli
 
 # modeling
 library(SDMtune)
@@ -28,186 +26,51 @@ library(rsample)
 library(rJava)
 
 # set data directory
+output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
+
+# set plot number
+plot_name <- "plot4"
+plot_number <- 4
 ```
+
 
 ## Read in Data
 
-```{r read}
-## ========================================
-##            Vector Data              ----
-## ========================================
+```{r, results='hide'}
+# read environmental rasters
+canopy <- rast(here(output_dir, "canopy", plot_name, "canopy.asc"))
+dnd_dn <- rast(here(output_dir, "dnd_dn", plot_name, "dnd_dn.asc"))
+elev <- rast(here(output_dir, "elev", plot_name, "elev.asc"))
+gs_dn <- rast(here(output_dir, "gs_dn", plot_name, "gs_dn.asc"))
+hli <- rast(here(output_dir, "hli", plot_name, "hli.asc"))
+li_dn <- rast(here(output_dir, "li_dn", plot_name, "li_dn.asc"))
+slope <- rast(here(output_dir, "slope", plot_name, "slope.asc"))
 
-# species point data
-occurence_p1 <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
-  clean_names() %>% 
+
+# combine environmental rasters
+predictor_stack_rast <- c(elev, hli, slope, canopy, dnd_dn, li_dn, gs_dn)
+
+# read in occurence data
+occurences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
   st_make_valid() %>% 
-  filter(plot == 1)
-
-# plot outline
-outline_p1 <- st_read(here(data_dir, "plot_outlines", "Plot_1.shp")) %>% 
-  st_make_valid() 
-
-## ========================================
-##         Geomorphology Rasters       ----
-## ========================================
-
-# elevation and slope rasters
-slope <- rast(here(data_dir, "old", "crob_slope"))
-elev <- rast(here(data_dir, "crob_elev"))
-
-# create hli raster
-hli <-  hli(elev)
-
-## ========================================
-##            Vegetation Rasters       ----
-## ========================================
-
-# load canopy raster
-canopy_p1 <- rast(here(data_dir, "Canopy_raster", "can_fx_3r_p1"))
-
-# load downed wood cover
-dnd_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_dnd_dn_p1"))
-
-# load litter cover percentage
-li_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_li_dn_p1"))
-
-# load grass cover
-gs_dn_p1 <- rast(here(data_dir, "brush_IDW3rad", "3rd_gs_dn_p1"))
-
+  clean_names() %>% 
+  filter(plot == plot_number)
 ```
-
-## Reproject Data
-
-```{r reproject}
-## ========================================
-##            Vector Data              ----
-## ========================================
-
-# occurence points
-occurence_p1 <- st_transform(occurence_p1, crs = "WGS84") 
-
-# plot outlines
-outline_p1 <- st_transform(outline_p1, crs = "WGS84")
-
-# plot together to see if points fall outside of plot
-tm_shape(outline_p1) +
-  tm_polygons() +
-  tm_shape(occurence_p1) +
-  tm_dots()
-
-## ========================================
-##         Geomorphology Rasters       ----
-## ========================================
-
-# reproject elevation and slope raster
-elev <- project(elev, y = "WGS84")
-slope <- project(slope, y = "WGS84")
-
-# create hli raster using reprojected elevation
-hli <- project(hli, y = "WGS84")
-
-# # plot geo rast w/occurence points
-# tm_shape(slope) +
-#   tm_raster() +
-#   tm_shape(outline_p1) +
-#   tm_borders(col = "black") +
-#   tm_shape(occurence_p1) +
-#   tm_dots(size = 0.3)
-  
-
-## ========================================
-##            Vegetation Rasters       ----
-## ========================================
-canopy_p1 <- project(x = canopy_p1, y = "WGS84")
-dnd_dn_p1 <- project(x = dnd_dn_p1, y = "WGS84")
-li_dn_p1 <- project(x = li_dn_p1, y = "WGS84")
-gs_dn_p1 <- project(x = gs_dn_p1, y = "WGS84")
-
-# plot a vegetation rast w/ occurence points
-tm_shape(canopy_p1) +
-  tm_raster() +
-  tm_shape(outline_p1) +
-  tm_borders(col = "black") +
-  tm_shape(occurence_p1) +
-  tm_dots(size = 0.3)
-
-## ========================================
-##           Update Raster Names       ----
-## ========================================
-set.names(elev, "elevation")
-set.names(hli, "heat_load_index")
-set.names(slope, "slope")
-set.names(canopy_p1, "canopy_cover")
-set.names(dnd_dn_p1, "downed_wood_cover")
-set.names(li_dn_p1, "litter_cover")
-set.names(gs_dn_p1, "grass_cover")
-```
-
-
-## Prep Rasters for Maxent
-
-```{r res}
-## ========================================
-##             Update Extent           ----
-## ========================================
-# store extent of smaller vegetation rasters
-can_extent <- ext(canopy_p1)
-
-# crop geo rasters
-elev <- crop(elev, canopy_p1)
-hli <- crop(hli, canopy_p1)
-slope <- crop(slope, canopy_p1)
-
-# update extent of geo rasters
-ext(elev) <- c(can_extent$xmin, can_extent$xmax,
-               can_extent$ymin, can_extent$ymax)
-ext(hli) <- c(can_extent$xmin, can_extent$xmax,
-               can_extent$ymin, can_extent$ymax)
-ext(slope) <- c(can_extent$xmin, can_extent$xmax,
-               can_extent$ymin, can_extent$ymax)
-
-## ========================================
-##        Count NAs in Rasters         ----
-## ========================================
-# # check NAs in vegetation rasters
-# global(canopy_p1, fun="isNA")
-# global(dnd_dn_p1, fun="isNA")
-# global(li_dn_p1, fun="isNA")
-# global(gs_dn_p1, fun="isNA")
-# 
-# # check NAs in geo rasters
-# global(elev, fun="isNA") #74043
-# global(hli, fun="isNA") #77125
-# global(slope, fun="isNA") #223139
-
-## ========================================
-##         Update Resolutions         ----
-## ========================================
-# update resolution in all geomorphic layers
-elev <- resample(elev, canopy_p1)
-hli <- resample(hli, canopy_p1)
-slope <- resample(slope, canopy_p1)
-
-```
-
 
 ## Running Maxent
 
 ```{r}
 # isolate occurence latitude and longitude
-p_coords <- occurence_p1 %>% 
+p_coords <- occurences %>% 
   st_drop_geometry() %>% 
   rename(y = latitude,
          x = longitude) %>% 
     dplyr::select(x,y)
 
-# combine environmental rasters
-predictor_stack_rast <- c(elev, hli, slope, canopy_p1, dnd_dn_p1, li_dn_p1, gs_dn_p1)
-
 # create background points using raster stack
 bg_points <- terra::spatSample(predictor_stack_rast,
-                               size = 1000,
+                               size = 550,
                                replace = FALSE,
                                xy = TRUE)
 
@@ -228,7 +91,8 @@ test <- datasets[[2]]
 maxnet_model <- train(method = "Maxnet", data = train)
 
 # select the hyperparameters to test
-h_tune <- list(reg = seq(0.1, 3, 0.1), fc = c("lq", "lh", "lqp", "lqph", "lqpht"))
+h_tune <- list(reg = seq(0.1, 3, 0.1), 
+               fc = c("lq", "lh", "lqp", "lqph", "lqpht"))
 
 # test all the possible combinations with gridSearch
 gs <- gridSearch(maxnet_model, 
@@ -236,13 +100,18 @@ gs <- gridSearch(maxnet_model,
                  metric = "auc", 
                  test = test)
 
-head(gs@results[order(-gs@results$test_AUC), ])  # Best combinations
+# view results of top performing models
+head(gs@results[order(-gs@results$test_AUC), ])  
 
-# Use the genetic algorithm instead with optimizeModel
-om <- optimizeModel(maxnet_model, hypers = h_tune, 
-                    metric = "auc", test = test, seed = 4)
+# view parameters of best model
+gs@models[[1]]
 
-head(om@results)  # Best combinations
+
+# # Use the genetic algorithm instead with optimizeModel
+# om <- optimizeModel(maxnet_model, hypers = h_tune, 
+#                     metric = "auc", test = test, seed = 4)
+# 
+# head(om@results)  # Best combinations
 ```
 
 ## Creating predictions
