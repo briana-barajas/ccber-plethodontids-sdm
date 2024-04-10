@@ -136,8 +136,11 @@ grid_res <- gridSearch(maxnet_model,
                        metric = "auc",
                        test = test)
 
-# view results
+# view results of top performing models
 head(grid_res@results[order(-grid_res@results$test_AUC), ])
+
+# view top performing model hyperparameters
+grid_res@models[[1]]
 
 
 
