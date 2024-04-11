@@ -51,8 +51,8 @@ slope <- rast(here(output_dir, "slope", plot_name, "slope.asc"))
 # combine environmental rasters
 predictor_stack_rast <- c(elev, hli, slope, canopy, dnd_dn, li_dn, gs_dn)
 
-# read in occurence data
-occurences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+# read in occurrence data
+occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
   st_make_valid() %>% 
   clean_names() %>% 
   filter(plot == plot_number)
@@ -61,16 +61,19 @@ occurences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) 
 ## Running Maxent
 
 ```{r}
-# isolate occurence latitude and longitude
-p_coords <- occurences %>% 
+# isolate occurrence latitude and longitude
+p_coords <- occurrences %>% 
   st_drop_geometry() %>% 
   rename(y = latitude,
          x = longitude) %>% 
     dplyr::select(x,y)
 
+# calculat number of points
+num_bg <- 10 * length(occurrences)
+
 # create background points using raster stack
 bg_points <- terra::spatSample(predictor_stack_rast,
-                               size = 550,
+                               size = 1000,
                                replace = FALSE,
                                xy = TRUE)
 
@@ -83,7 +86,8 @@ swd_object <- prepareSWD(species = "slender salamander",
                          env = predictor_stack_rast)
 
 # split data into test and train
-datasets <- trainValTest(swd_object, test = 0.2, only_presence = TRUE, seed = 25)
+datasets <- trainValTest(swd_object, test = 0.2, 
+                         only_presence = TRUE, seed = 25)
 train <- datasets[[1]]
 test <- datasets[[2]]
 
@@ -126,7 +130,7 @@ tm_shape(map) +
   tm_raster() +
   tm_shape(outline_p1) +
   tm_borders() +
-  tm_shape(occurence_p1) +
+  tm_shape(occurrence_p1) +
   tm_dots()
 ```
 

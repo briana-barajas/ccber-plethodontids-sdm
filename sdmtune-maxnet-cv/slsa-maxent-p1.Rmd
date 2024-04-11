@@ -30,8 +30,8 @@ output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
 
 # set plot number
-plot_name <- "plot1"
-plot_number <- 1
+plot_name <- "plot4"
+plot_number <- 4
 ```
 
 
@@ -51,8 +51,8 @@ slope <- rast(here(output_dir, "slope", plot_name, "slope.asc"))
 # combine environmental rasters
 predictor_stack_rast <- c(elev, hli, slope, canopy, dnd_dn, li_dn, gs_dn)
 
-# read in occurence data
-occurences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+# read in occurrence data
+occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
   st_make_valid() %>% 
   clean_names() %>% 
   filter(plot == plot_number)
@@ -68,8 +68,8 @@ set.seed(479)
 ## ========================================
 ##             Prepare Data            ----
 ## ========================================
-# update df, isolating occurence lat and long
-occurence_coords <- occurences %>% 
+# update df, isolating occurrence lat and long
+occurrence_coords <- occurrences %>% 
   st_drop_geometry() %>% 
   rename(y = latitude,
          x = longitude) %>% 
@@ -90,20 +90,20 @@ bg_coords <- bg_points %>% dplyr::select(c(x,y))
 
 # create SWD object using data
 swd_obj <- prepareSWD(species = "CA Slender Salamander",
-                      p = occurence_coords, # occurence points
+                      p = occurrence_coords, # occurrence points
                       a = bg_coords, # background point coordinates
                       env = predictor_stack_rast)
 
 # split data into test and train
 split <- trainValTest(swd_obj, 
                       test = 0.2, # proportion of data for testing
-                      only_presence = FALSE, #includes bg pts in each partition
+                      only_presence = TRUE, #includes bg pts in each partition
                       seed = 4) # keep same random split
 train <- split[[1]]
 test <- split[[2]]
 
 # prepare cross validation folds
-cv_folds <- randomFolds(train, k = 4, only_presence = TRUE)
+cv_folds <- randomFolds(train, k = 10, only_presence = TRUE)
 
 
 ## ========================================
@@ -119,7 +119,7 @@ maxnet_model <- train(method = "Maxnet",
                       folds = cv_folds,
                       data = train)
 
-# # remove variebles with importance less than 2% IF it doesn't decrease model performance
+# # remove variables with importance less than 2% IF it doesn't decrease model performance
 # # AUC improves by only 0.01 when using reduced variable mode
 # maxnet_model_red <- reduceVar(maxnet_model,
 #                     th = 2,
@@ -141,8 +141,6 @@ head(grid_res@results[order(-grid_res@results$test_AUC), ])
 
 # view top performing model hyperparameters
 grid_res@models[[1]]
-
-
 
 ```
 
