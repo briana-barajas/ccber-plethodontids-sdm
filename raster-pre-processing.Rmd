@@ -122,6 +122,14 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   set.names(li_dn, "litter_cover")
   set.names(gs_dn, "grass_cover")
   
+  set.names(ba_dn, "ba_dn")
+  set.names(br_dn, "br_dn")
+  set.names(br_ht, "br_ht")
+  set.names(dnd_st, "dnd_st")
+  set.names(dnd_stc, "dnd_stc")
+  set.names(fb_dn, "fb_dn")
+  set.names(rk_dn, "rk_dn")
+  
   ## ========================================
   ##           Update ext and res        ----
   ## ========================================
