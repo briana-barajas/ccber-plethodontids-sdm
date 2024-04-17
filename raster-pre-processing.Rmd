@@ -21,10 +21,6 @@ library(spatialEco) #transform elev to hli
 # set data directory
 data_dir <- here("data", "CampRoberts_spatial_data")
 output_dir <- here("data", "updated-rasters")
-
-# sample with one plot before adding to function
-plot_number <- 2
-new_crs = "WGS84"
 ```
 
 ## Create Function for Raster Manipulation
@@ -75,8 +71,8 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
                      paste0("3rd_br_dn_p", plot_number)))
   br_ht <- rast(here(data_dir, "brush_IDW3rad", 
                      paste0("3rd_br_ht_p", plot_number)))
-  dnd_db <- rast(here(data_dir, "brush_IDW3rad", 
-                      paste0("3rd_dnd_db_p", plot_number)))
+  # dnd_db <- rast(here(data_dir, "brush_IDW3rad", 
+  #                     paste0("3rd_dnd_db_p", plot_number)))
   dnd_st <- rast(here(data_dir, "brush_IDW3rad", 
                       paste0("3rd_dnd_st_p", plot_number)))
   fb_dn <- rast(here(data_dir, "brush_IDW3rad", 
@@ -111,7 +107,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   ba_dn <- project(x = ba_dn, y = new_crs)
   br_dn <- project(x = br_dn, y = new_crs)
   br_ht <- project(x = br_ht, y = new_crs)
-  dnd_db <- project(x = dnd_db, y = new_crs)
+  # dnd_db <- project(x = dnd_db, y = new_crs)
   dnd_st <- project(x = dnd_st, y = new_crs)
   fb_dn <- project(x = fb_dn, y = new_crs)
   rk_dn <- project(x = rk_dn, y = new_crs)
@@ -159,48 +155,48 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   # export canopy raster ----
   writeRaster(x = canopy, gdal="COMPRESS=NONE",
               filename = paste0(path, "/canopy/plot",
-                                plot_number, "/canopy.asc"))
+                                plot_number, "/canopy.asc"), overwrite=TRUE)
   
   # export downed-wood raster ----
   writeRaster(x = dnd_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/dnd_dn/plot",
-                                plot_number, "/dnd_dn.asc"))
+                                plot_number, "/dnd_dn.asc"), overwrite=TRUE)
   
   # export litter cover raster ----
   writeRaster(x = li_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/li_dn/plot",
-                                plot_number, "/li_dn.asc"))
+                                plot_number, "/li_dn.asc"), overwrite=TRUE)
   
   # export grass cover raster ----
   writeRaster(x = gs_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/gs_dn/plot",
-                                plot_number, "/gs_dn.asc"))
+                                plot_number, "/gs_dn.asc"), overwrite=TRUE)
   
   # export added veg rasters (2024-04) ----
   writeRaster(x = ba_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/ba_dn/plot",
-                                plot_number, "/ba_dn.asc"))
+                                plot_number, "/ba_dn.asc"), overwrite=TRUE)
   writeRaster(x = br_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/br_dn/plot",
-                                plot_number, "/br_dn.asc"))
+                                plot_number, "/br_dn.asc"), overwrite=TRUE)
   writeRaster(x = br_ht, gdal="COMPRESS=NONE",
               filename = paste0(path, "/br_ht/plot",
-                                plot_number, "/br_ht.asc"))
-  writeRaster(x = dnd_db, gdal="COMPRESS=NONE",
-              filename = paste0(path, "/dnd_db/plot",
-                                plot_number, "/dnd_db.asc"))
+                                plot_number, "/br_ht.asc"), overwrite=TRUE)
+  # writeRaster(x = dnd_db, gdal="COMPRESS=NONE",
+  #             filename = paste0(path, "/dnd_db/plot",
+  #                               plot_number, "/dnd_db.asc"), overwrite=TRUE)
   writeRaster(x = dnd_st, gdal="COMPRESS=NONE",
               filename = paste0(path, "/dnd_st/plot",
-                                plot_number, "/dnd_st.asc"))
+                                plot_number, "/dnd_st.asc"), overwrite=TRUE)
   writeRaster(x = fb_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/fb_dn/plot",
-                                plot_number, "/fb_dn.asc"))
+                                plot_number, "/fb_dn.asc"), overwrite=TRUE)
   writeRaster(x = rk_dn, gdal="COMPRESS=NONE",
               filename = paste0(path, "/rk_dn/plot",
-                                plot_number, "/rk_dn.asc"))
+                                plot_number, "/rk_dn.asc"), overwrite=TRUE)
   writeRaster(x = dnd_stc, gdal="COMPRESS=NONE",
               filename = paste0(path, "/dnd_stc/plot",
-                                plot_number, "/dnd_stc.asc"))
+                                plot_number, "/dnd_stc.asc"), overwrite=TRUE)
   
   ## ========================================
   ##            Export Geo Rasters       ----
@@ -209,17 +205,17 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   # export elevation raster ----
   writeRaster(x = elev, gdal="COMPRESS=NONE",
               filename = paste0(path, "/elev/plot",
-                                plot_number, "/elev.asc"))
+                                plot_number, "/elev.asc"), overwrite=TRUE)
   
   # export heat load raster ----
   writeRaster(x = hli, gdal="COMPRESS=NONE",
               filename = paste0(path, "/hli/plot",
-                                plot_number, "/hli.asc"))
+                                plot_number, "/hli.asc"), overwrite=TRUE)
   
   # export slope raster ----
   writeRaster(x = slope, gdal="COMPRESS=NONE",
               filename = paste0(path, "/slope/plot",
-                                plot_number, "/slope.asc"))
+                                plot_number, "/slope.asc"), overwrite=TRUE)
 }
 ```
 
