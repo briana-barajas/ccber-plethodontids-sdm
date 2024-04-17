@@ -1,0 +1,134 @@
+---
+title: "Final MaxEnt Predictions Using SDMTune"
+author: "Briana Barajas"
+date: 2024-04-17
+---
+
+## Preparation
+
+Rasters were pre-processed and saved so they could easily be loaded, and combined into a raster stack of the appropriate data type. `SDMTune` provides functionality for reducing the number of environmental background variables included in a species distribution model. Instead of pre-selecting environmental variables, all variables were included to determine differences between plots.
+
+__Load Data and Packages:__
+```{r, include = FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r, results='hide'}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+output_dir <- here("data", "updated-rasters")
+data_dir <- here("data", "CampRoberts_spatial_data")
+
+# set plot number
+plot_name <- "plot4"
+plot_number <- 4
+```
+
+```{r}
+# load occurrence points
+occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  st_make_valid() %>% 
+  clean_names() %>% 
+  filter(plot == plot_number)
+
+# list all environmental rasters
+env_layer_names <- c("ba_dn", "br_ht", "dnd_st", "elev", "gs_dn", 
+                     "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
+                     "dnd_stc", "fb_dn", "hli", "rk_dn")
+
+# load environmental layers
+for (i in env_layer_names) {
+  layer <- rast(here(output_dir, i, plot_name, paste0(i, ".asc")))
+  assign(x = paste0(i), layer, envir = .GlobalEnv)
+}
+
+# create raster stack
+predictor_stack_rast <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
+                          slope, br_dn, canopy, dnd_dn, dnd_stc,
+                          fb_dn, hli, rk_dn)
+rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
+   dnd_stc, fb_dn, hli, rk_dn, layer)
+```
+
+
+## Maxent Without Cross-Validation
+Sofar, it seems that cross validation only improves model accuracy (measure via AUC) for plots with larger data sets. Model predictions with cross-validation will be compared to predictions that did not use cross-validation.
+
+### Data Preparation
+```{r}
+set.seed(124)
+
+# update df, isolating occurrence lat and long
+occurrence_coords <- occurrences %>% 
+  st_drop_geometry() %>% 
+  rename(y = latitude,
+         x = longitude) %>% 
+  dplyr::select(x,y)
+
+# create background points using raster stack
+bg_points <- spatSample(predictor_stack_rast,
+                        size = 1000,
+                        replace = TRUE,
+                        xy = TRUE)
+
+# isolate coordinates of bg points
+bg_coords <- bg_points %>% dplyr::select(c(x,y))
+
+```
+There seems to be a large discrepancy in model performance depending on the number of background points. Existing research does not appear to support any single solution for selecting the number of background, especially with such a small spatial scale. Moving forward, background points might be changed to be related to occurence points (i.e. 100 * occurrences). This would allow the model to fluctuate for each plot, since they greatly vary in the number of occurrences. 
+
+### Pre-Processing
+```{r}
+# create SWD object using data
+swd_obj <- prepareSWD(species = "CA Slender Salamander",
+                      p = occurrence_coords, # occurrence points
+                      a = bg_coords, # background point coordinates
+                      env = predictor_stack_rast) # background layers
+
+# split data into test and train
+split <- trainValTest(swd_obj, 
+                      test = 0.2, # % of data for testing
+                      val = 0, # % of of data for validation
+                      only_presence = FALSE, # F=split bg points, T=use all bg points
+                      seed = 2) # set seed for random split
+train <- split[[1]]
+test <- split[[2]]
+
+```
+For data processing, the primary decision to be made was regarding the inclusion of background points. If `only_presence` is set to false, background points are split into test-train data along with the occurrences. If it's true, all the background points are used for model predictions.
+
+### Tune Hyperparameters
+```{r}
+# select hyper parameters for testing
+param_tune <- list(
+  reg = seq(0.1, 3, 0.1), # regularization multiplier
+  fc = c("lq", "lh", "lqp", "lqph", "lqpht")) # feature class combination
+
+# train maxnet model
+maxnet_model <- train(method = "Maxnet",
+                      folds = cv_folds,
+                      data = train)
+
+# # remove variables with importance less than 2% IF it doesn't decrease model performance
+# # AUC improves by only 0.01 when using reduced variable mode
+# maxnet_model_red <- reduceVar(maxnet_model,
+#                     th = 2,
+#                     metric = "auc",
+#                     test = test,
+#                     use_jk = TRUE)
+```
+
