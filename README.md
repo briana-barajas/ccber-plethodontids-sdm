@@ -1,5 +1,6 @@
-# Species Distribution Modeling for California Slender Salamander 
-Independent research project, creating and assessing species distribution models for the California Slender salamander (*Batrachoseps attenuatus*). The goal is to assess the performance of species distribution models given high-resolution raster data over a small spatial scale (6-hectare plots).
+# Species Distribution Modeling for Black-bellied Slender Salamander
+
+Independent research project, creating and assessing species distribution models for the Black-bellied Slender Salamander (*Batrachoseps nigriventris*). The goal is to assess the performance of species distribution models given high-resolution raster data over a small spatial scale (6-hectare plots).
 
 
 ## Progress
@@ -9,7 +10,7 @@ Independent research project, creating and assessing species distribution models
 3. Tuned hyperparameters and applied Maxent to a single plot using `SDMtune`
 
 **In Progress**
-1.  Expediting the modeling process to tune hyperparameters and apply Maxent to the remaining 7 plots
+1.  Maximizing k-fold cross validation for MaxEnt using `SDMtune`
 2.  Selecting hyperparameters to tune for a boosted regression tree model
 
 
