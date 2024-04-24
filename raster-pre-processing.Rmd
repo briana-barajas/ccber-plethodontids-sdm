@@ -71,8 +71,8 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
                      paste0("3rd_br_dn_p", plot_number)))
   br_ht <- rast(here(data_dir, "brush_IDW3rad", 
                      paste0("3rd_br_ht_p", plot_number)))
-  # dnd_db <- rast(here(data_dir, "brush_IDW3rad", 
-  #                     paste0("3rd_dnd_db_p", plot_number)))
+  dnd_db <- rast(here(data_dir, "brush_IDW3rad",
+                      paste0("3rd_dnd_db_p", plot_number)))
   dnd_st <- rast(here(data_dir, "brush_IDW3rad", 
                       paste0("3rd_dnd_st_p", plot_number)))
   fb_dn <- rast(here(data_dir, "brush_IDW3rad", 
@@ -107,7 +107,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   ba_dn <- project(x = ba_dn, y = new_crs)
   br_dn <- project(x = br_dn, y = new_crs)
   br_ht <- project(x = br_ht, y = new_crs)
-  # dnd_db <- project(x = dnd_db, y = new_crs)
+  dnd_db <- project(x = dnd_db, y = new_crs)
   dnd_st <- project(x = dnd_st, y = new_crs)
   fb_dn <- project(x = fb_dn, y = new_crs)
   rk_dn <- project(x = rk_dn, y = new_crs)
@@ -129,6 +129,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   set.names(dnd_stc, "dnd_stc")
   set.names(fb_dn, "fb_dn")
   set.names(rk_dn, "rk_dn")
+  set.names(dnd_db, "dnd_db")
   
   ## ========================================
   ##           Update ext and res        ----
@@ -190,9 +191,9 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   writeRaster(x = br_ht, gdal="COMPRESS=NONE",
               filename = paste0(path, "/br_ht/plot",
                                 plot_number, "/br_ht.asc"), overwrite=TRUE)
-  # writeRaster(x = dnd_db, gdal="COMPRESS=NONE",
-  #             filename = paste0(path, "/dnd_db/plot",
-  #                               plot_number, "/dnd_db.asc"), overwrite=TRUE)
+  writeRaster(x = dnd_db, gdal="COMPRESS=NONE",
+              filename = paste0(path, "/dnd_db/plot",
+                                plot_number, "/dnd_db.asc"), overwrite=TRUE)
   writeRaster(x = dnd_st, gdal="COMPRESS=NONE",
               filename = paste0(path, "/dnd_st/plot",
                                 plot_number, "/dnd_st.asc"), overwrite=TRUE)
@@ -235,8 +236,3 @@ for (i in seq(1:8)) {
                   path = output_dir)
 }
 ```
-
-
-
-
-
