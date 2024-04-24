@@ -34,8 +34,8 @@ output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
 
 # set plot number
-plot_name <- "plot4"
-plot_number <- 4
+plot_name <- "plot7"
+plot_number <- 7
 ```
 
 ```{r}
@@ -46,7 +46,7 @@ occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"))
   filter(plot == plot_number)
 
 # list all environmental rasters
-env_layer_names <- c("ba_dn", "br_ht", "dnd_st", "elev", "gs_dn", 
+env_layer_names <- c("ba_dn", "br_ht","dnd_db", "dnd_st", "elev", "gs_dn", 
                      "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
                      "dnd_stc", "fb_dn", "hli", "rk_dn")
 
@@ -58,15 +58,15 @@ for (i in env_layer_names) {
 
 # create raster stack
 predictor_stack_rast <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
-                          slope, br_dn, canopy, dnd_dn, dnd_stc,
+                          slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
                           fb_dn, hli, rk_dn)
 rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-   dnd_stc, fb_dn, hli, rk_dn, layer)
+   dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db)
 ```
 
 
 ## Maxent Without Cross-Validation
-Sofar, it seems that cross validation only improves model accuracy (measure via AUC) for plots with larger data sets. Model predictions with cross-validation will be compared to predictions that did not use cross-validation.
+Sofar, it seems that cross validation only improves model accuracy (measured via AUC) for plots with larger data sets. Model performance with cross-validation will be compared to performance without cross-validation.
 
 ### Data Preparation
 ```{r}
@@ -94,41 +94,60 @@ There seems to be a large discrepancy in model performance depending on the numb
 ### Pre-Processing
 ```{r}
 # create SWD object using data
-swd_obj <- prepareSWD(species = "CA Slender Salamander",
+swd_obj <- prepareSWD(species = "Black-bellied Slender Salamander",
                       p = occurrence_coords, # occurrence points
                       a = bg_coords, # background point coordinates
                       env = predictor_stack_rast) # background layers
+
+# update swd_object to add sample to background
+swd_obj <- addSamplesToBg(swd_obj)
 
 # split data into test and train
 split <- trainValTest(swd_obj, 
                       test = 0.2, # % of data for testing
                       val = 0, # % of of data for validation
-                      only_presence = FALSE, # F=split bg points, T=use all bg points
+                      only_presence = TRUE, # F=split bg points, T=use all bg points
                       seed = 2) # set seed for random split
 train <- split[[1]]
 test <- split[[2]]
 
 ```
-For data processing, the primary decision to be made was regarding the inclusion of background points. If `only_presence` is set to false, background points are split into test-train data along with the occurrences. If it's true, all the background points are used for model predictions.
+For data processing, the primary decision to be made was regarding the inclusion of background points. If `only_presence` is set to false, background points are split into test-train data along with the occurrences. If it's true, all the background points are used for model predictions. Background points are not equivalent to pseudoabsences, as they may occur in areas where the species is present. We want to set `only_presence` to TRUE, which is standard for presence-only methods.
+
+__NOTE:__ Need to look into more `addSamplesToBg()`. Once the new layers were added, this had to be added in order to train the model.
 
 ### Tune Hyperparameters
 ```{r}
+# define model
+maxnet_model <- train(method = "Maxnet", data = train)
+
 # select hyper parameters for testing
 param_tune <- list(
   reg = seq(0.1, 3, 0.1), # regularization multiplier
   fc = c("lq", "lh", "lqp", "lqph", "lqpht")) # feature class combination
 
-# train maxnet model
-maxnet_model <- train(method = "Maxnet",
-                      folds = cv_folds,
-                      data = train)
+# remove variables with importance less than 2% IF it doesn't decrease model performance
+maxnet_model_red <- reduceVar(maxnet_model,
+                    th = 2,
+                    metric = "auc",
+                    test = test,
+                    use_jk = TRUE)
+```
 
-# # remove variables with importance less than 2% IF it doesn't decrease model performance
-# # AUC improves by only 0.01 when using reduced variable mode
-# maxnet_model_red <- reduceVar(maxnet_model,
-#                     th = 2,
-#                     metric = "auc",
-#                     test = test,
-#                     use_jk = TRUE)
+__NOTE:__ Need to consider wheter to use the Jackknife AUC test. When this is false, the percent contribution is used instead.
+
+### Final Model
+```{r}
+# test possible combinations with gridSearch
+gs <- gridSearch(maxnet_model_red, 
+                 hypers = param_tune, 
+                 metric = "auc", 
+                 test = test)
+
+# view top performing models
+head(gs@results[order(-gs@results$test_AUC), ])  
+
+# view parameters for best model
+gs@models[[1]]
 ```
 
