@@ -34,8 +34,8 @@ output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
 
 # set plot number
-plot_name <- "plot7"
-plot_number <- 7
+plot_name <- "plot1"
+plot_number <- 1
 ```
 
 ```{r}
@@ -60,15 +60,12 @@ for (i in env_layer_names) {
 predictor_stack_rast <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
                           slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
                           fb_dn, hli, rk_dn)
+
 rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
    dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db)
 ```
 
-
-## Maxent Without Cross-Validation
-Sofar, it seems that cross validation only improves model accuracy (measured via AUC) for plots with larger data sets. Model performance with cross-validation will be compared to performance without cross-validation.
-
-### Data Preparation
+## Data Preparation
 ```{r}
 set.seed(124)
 
@@ -111,6 +108,11 @@ split <- trainValTest(swd_obj,
 train <- split[[1]]
 test <- split[[2]]
 
+# prepare cross validation folds
+k_max <- nrow(distinct(occurrence_coords, x, y)) - 1
+
+cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
+
 ```
 For data processing, the primary decision to be made was regarding the inclusion of background points. If `only_presence` is set to false, background points are split into test-train data along with the occurrences. If it's true, all the background points are used for model predictions. Background points are not equivalent to pseudoabsences, as they may occur in areas where the species is present. We want to set `only_presence` to TRUE, which is standard for presence-only methods.
 
@@ -119,7 +121,9 @@ __NOTE:__ Need to look into more `addSamplesToBg()`. Once the new layers were ad
 ### Tune Hyperparameters
 ```{r}
 # define model
-maxnet_model <- train(method = "Maxnet", data = train)
+maxnet_model <- train(method = "Maxnet", 
+                      folds = cv_folds,
+                      data = train)
 
 # select hyper parameters for testing
 param_tune <- list(
@@ -128,13 +132,13 @@ param_tune <- list(
 
 # remove variables with importance less than 2% IF it doesn't decrease model performance
 maxnet_model_red <- reduceVar(maxnet_model,
-                    th = 2,
-                    metric = "auc",
-                    test = test,
-                    use_jk = TRUE)
+                              th = 2,
+                              metric = "auc",
+                              test = test,
+                              use_jk = TRUE)
 ```
 
-__NOTE:__ Need to consider wheter to use the Jackknife AUC test. When this is false, the percent contribution is used instead.
+__NOTE:__ Need to consider whether to use the Jackknife AUC test. When this is false, the percent contribution is used instead.
 
 ### Final Model
 ```{r}
@@ -149,5 +153,24 @@ head(gs@results[order(-gs@results$test_AUC), ])
 
 # view parameters for best model
 gs@models[[1]]
+
+```
+
+```{r, eval=FALSE}
+result_df <- gs@results
+write_csv(result_df, here("outputs", "auc-max-k-5.csv"))
+```
+
+```{r, eval=FALSE}
+map <- predict(maxnet_model_red,
+               data = predictor_stack_rast,
+               type = "cloglog")
+
+# plot prediction map
+tm_shape(map) +
+  tm_raster() +
+  tm_shape(occurrences) +
+  tm_dots(size = 0.15) +
+  tm_layout(legend.position = c(1, 0.2))
 ```
 

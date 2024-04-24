@@ -1,0 +1,150 @@
+---
+title: "Final Boosted Regression Tree Predictions Using SDMTune"
+author: "Briana Barajas"
+date: 2024-04-24
+---
+
+## Preparation
+
+Rasters were pre-processed and saved so they could easily be loaded, and combined into a raster stack of the appropriate data type. `SDMTune` provides functionality for reducing the number of environmental background variables included in a species distribution model. Instead of pre-selecting environmental variables, all variables were included to determine differences between plots.
+
+__Load Data and Packages:__
+```{r, include = FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+```{r, results='hide'}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+output_dir <- here("data", "updated-rasters")
+data_dir <- here("data", "CampRoberts_spatial_data")
+
+# set plot number
+plot_name <- "plot1"
+plot_number <- 1
+```
+
+```{r}
+# load occurrence points
+occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  st_make_valid() %>% 
+  clean_names() %>% 
+  filter(plot == plot_number)
+
+# list all environmental rasters
+env_layer_names <- c("ba_dn", "br_ht","dnd_db", "dnd_st", "elev", "gs_dn", 
+                     "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
+                     "dnd_stc", "fb_dn", "hli", "rk_dn")
+
+# load environmental layers
+for (i in env_layer_names) {
+  layer <- rast(here(output_dir, i, plot_name, paste0(i, ".asc")))
+  assign(x = paste0(i), layer, envir = .GlobalEnv)
+}
+
+# create raster stack
+predictor_stack_rast <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
+                          slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
+                          fb_dn, hli, rk_dn)
+
+rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
+   dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db)
+```
+
+## Data Preparation
+```{r}
+set.seed(124)
+
+# update df, isolating occurrence lat and long
+occurrence_coords <- occurrences %>% 
+  st_drop_geometry() %>% 
+  rename(y = latitude,
+         x = longitude) %>% 
+  dplyr::select(x,y)
+
+# create background points using raster stack
+bg_points <- spatSample(predictor_stack_rast,
+                        size = 1000,
+                        replace = TRUE,
+                        xy = TRUE)
+
+# isolate coordinates of bg points
+bg_coords <- bg_points %>% dplyr::select(c(x,y))
+
+```
+
+
+### Pre-Processing
+```{r}
+# create SWD object using data
+swd_obj <- prepareSWD(species = "Black-bellied Slender Salamander",
+                      p = occurrence_coords, # occurrence points
+                      a = bg_coords, # background point coordinates
+                      env = predictor_stack_rast) # background layers
+
+# update swd_object to add sample to background
+swd_obj <- addSamplesToBg(swd_obj)
+
+# split data into test and train
+split <- trainValTest(swd_obj, 
+                      test = 0.2, # % of data for testing
+                      val = 0, # % of of data for validation
+                      only_presence = TRUE, # F=split bg points, T=use all bg points
+                      seed = 2) # set seed for random split
+train <- split[[1]]
+test <- split[[2]]
+
+# prepare cross validation folds
+k_max <- nrow(distinct(occurrence_coords, x, y)) - 1
+
+cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
+
+```
+
+### Tune Hyperparameters
+```{r}
+# define model
+brt_model <- train(method = "BRT", 
+                      folds = cv_folds,
+                      data = train)
+
+# select hyper parameters for testing
+param_tune <- list(n.trees = seq(10, 300, 10)) 
+
+# remove variables with importance less than 2% IF it doesn't decrease model performance
+brt_model_red <- reduceVar(brt_model,
+                              th = 2,
+                              metric = "auc",
+                              test = test,
+                              use_jk = TRUE)
+```
+
+### Final Model
+```{r}
+# test possible combinations with gridSearch
+gs <- gridSearch(brt_model_red, 
+                 hypers = param_tune, 
+                 metric = "auc", 
+                 test = test)
+
+# view top performing models
+head(gs@results[order(-gs@results$test_AUC), ])  
+
+# view parameters for best model
+gs@models[[1]]
+
+```
