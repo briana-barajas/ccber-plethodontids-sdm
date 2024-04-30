@@ -156,10 +156,6 @@ gs@models[[1]]
 
 ```
 
-```{r, eval=FALSE}
-result_df <- gs@results
-write_csv(result_df, here("outputs", "auc-max-k-5.csv"))
-```
 
 ```{r, eval=FALSE}
 map <- predict(maxnet_model_red,
@@ -173,4 +169,20 @@ tm_shape(map) +
   tm_dots(size = 0.15) +
   tm_layout(legend.position = c(1, 0.2))
 ```
+
+## Fuction Testing
+The previous steps were incorporated into a function that could iterate through all the plots. Given that the file structure remains the same, the only input required is a numeric plot number.
+```{r}
+# define file paths
+output_dir <- here("data", "updated-rasters")
+data_dir <- here("data", "CampRoberts_spatial_data")
+
+source(here("sdmtune-final-models", "sdmtune-maxent-final-function.R"))
+
+# test function with plot
+tune_maxent(4, data_dir, output_dir)
+```
+
+
+
 

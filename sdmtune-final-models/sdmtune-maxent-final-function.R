@@ -1,10 +1,12 @@
 #' Tune MaxEnt Model Using SDMTune
 #'
 #' @param plot_number Numeric plot number
+#' @param point_dir File path for occurrence data
+#' @param rast_dir File path for environmental variables
 #'
 #' @return Grid search results for 
 #'
-function(plot_number){
+tune_maxent <- function(plot_number, point_dir, rast_dir){
   
   ## ========================================
   ##              Load Data              ----
@@ -13,7 +15,7 @@ function(plot_number){
   plot_name <- paste0("plot", plot_number)
   
   # load occurrence points
-  occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
     st_make_valid() %>% 
     clean_names() %>% 
     filter(plot == plot_number)
@@ -25,7 +27,7 @@ function(plot_number){
   
   # load environmental rasters
   for (i in env_layer_names) {
-    layer <- rast(here(output_dir, i, plot_name, paste0(i, ".asc")))
+    layer <- rast(here(rast_dir, i, plot_name, paste0(i, ".asc")))
     assign(x = paste0(i), layer, envir = .GlobalEnv)
   }
   
@@ -111,6 +113,7 @@ function(plot_number){
                    hypers = param_tune, 
                    metric = "auc", 
                    test = test)
+  return(gs)
 }
 
 
