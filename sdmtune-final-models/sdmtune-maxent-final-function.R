@@ -113,7 +113,19 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
                    hypers = param_tune, 
                    metric = "auc", 
                    test = test)
-  return(gs)
+  
+  ## ========================================
+  ##             Return Results          ----
+  ## ========================================
+  # grid search results
+  assign("gs", gs, envir = .GlobalEnv)
+  
+  # prediction map
+  map <- predict(maxnet_model_red,
+                 data = predictor_stack_rast,
+                 type = "cloglog")
+  assign("prediction_map", map, envir = .GlobalEnv)
+  
 }
 
 

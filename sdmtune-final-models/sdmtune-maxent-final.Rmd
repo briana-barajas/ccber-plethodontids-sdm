@@ -173,7 +173,24 @@ tm_shape(map) +
 ## Fuction Testing
 The previous steps were incorporated into a function that could iterate through all the plots. Given that the file structure remains the same, the only input required is a numeric plot number.
 ```{r}
-# define file paths
+rm(list = ls())
+
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
 output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
 
