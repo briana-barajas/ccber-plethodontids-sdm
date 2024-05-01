@@ -109,9 +109,9 @@ train <- split[[1]]
 test <- split[[2]]
 
 # prepare cross validation folds
-k_max <- nrow(distinct(occurrence_coords, x, y)) - 1
+k_max <- nrow(distinct(occurrence_coords, x, y)) * 1/4
 
-cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
+cv_folds <- randomFolds(train, k = 3, only_presence = TRUE)
 
 ```
 
@@ -123,7 +123,11 @@ brt_model <- train(method = "BRT",
                       data = train)
 
 # select hyper parameters for testing
-param_tune <- list(n.trees = seq(10, 300, 10)) 
+param_tune <- list(distribution = "gaussian", #for continuous output variables
+                   n.trees = seq(10, 100, 10),
+                   interaction.depth = seq(1,6,1),
+                   shrinkage = seq(0.01, 0.1, 0.01),
+                   bag.fraction = seq(0.5, 0.75, 0.05))
 
 # remove variables with importance less than 2% IF it doesn't decrease model performance
 brt_model_red <- reduceVar(brt_model,
@@ -131,20 +135,34 @@ brt_model_red <- reduceVar(brt_model,
                               metric = "auc",
                               test = test,
                               use_jk = TRUE)
-```
 
-### Final Model
-```{r}
 # test possible combinations with gridSearch
 gs <- gridSearch(brt_model_red, 
                  hypers = param_tune, 
                  metric = "auc", 
                  test = test)
 
+```
+
+### Final Model
+```{r}
 # view top performing models
 head(gs@results[order(-gs@results$test_AUC), ])  
 
 # view parameters for best model
-gs@models[[1]]
+#gs@models[[1]]
+
+# isolate index location for the best parameters
+best_loc <- which.max(gs@results$test_AUC)
+
+# retrain model with best parameters for final prediction
+best_model <- combineCV(gs@models[[best_loc]])
 
 ```
+__NOTE:__ The best perdorming values of shrinkage are actually larger, which is interesting. Typically the smaller the value of shrinkage, the higher the model accurace.
+
+### Plots
+```{r}
+plotROC(best_model, test = test)
+```
+
