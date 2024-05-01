@@ -4,7 +4,7 @@
 #' @param point_dir File path for occurrence data
 #' @param rast_dir File path for environmental variables
 #'
-#' @return Grid search results for 
+#' @return Grid search results, initial maxent model, and reduced variable maxent model
 #'
 tune_maxent <- function(plot_number, point_dir, rast_dir){
   
@@ -83,7 +83,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   # prepare cross validation folds
   k_max <- nrow(distinct(occurrence_coords, x, y)) - 1
   
-  cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
+  cv_folds <- randomFolds(train, k = 3, only_presence = TRUE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -117,15 +117,17 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ## ========================================
   ##             Return Results          ----
   ## ========================================
+  # test data (need for ROC plots)
+  assign("test", test, envir = .GlobalEnv)
   # grid search results
-  assign("gs", gs, envir = .GlobalEnv)
+  assign(x = "gs_results", gs, envir = .GlobalEnv)
   
-  # prediction map
-  map <- predict(maxnet_model_red,
-                 data = predictor_stack_rast,
-                 type = "cloglog")
-  assign("prediction_map", map, envir = .GlobalEnv)
+  # initial model object
+  assign("maxnet_model", maxnet_model, envir = .GlobalEnv)
   
+  # reduced model
+  assign("reduced_maxnet_mod", maxnet_model_red, envir = .GlobalEnv)
+
 }
 
 
