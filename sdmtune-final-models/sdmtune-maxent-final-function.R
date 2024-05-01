@@ -89,7 +89,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ##          Define Model & Variables   ----
   ## ========================================
   # define model
-  maxnet_model <- train(method = "Maxnet", 
+  maxent_model <- train(method = "Maxnet", 
                         folds = cv_folds,
                         data = train)
   
@@ -99,7 +99,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
     fc = c("lq", "lh", "lqp", "lqph", "lqpht")) # feature class combination
   
   # remove variables with importance less than 2% IF it doesn't decrease model performance
-  maxnet_model_red <- reduceVar(maxnet_model,
+  maxent_model_red <- reduceVar(maxent_model,
                                 th = 2,
                                 metric = "auc",
                                 test = test,
@@ -109,7 +109,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ##          Tune Hyperparameters       ----
   ## ========================================
   # test possible combinations with gridSearch
-  gs <- gridSearch(maxnet_model_red, 
+  gs <- gridSearch(maxent_model_red, 
                    hypers = param_tune, 
                    metric = "auc", 
                    test = test)
@@ -119,14 +119,18 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ## ========================================
   # test data (need for ROC plots)
   assign("test", test, envir = .GlobalEnv)
+  
+  # predictor raster stack (needed for mapping)
+  assign("predictor_stack_rast", predictor_stack_rast, envir = .GlobalEnv)
+  
   # grid search results
-  assign(x = "gs_results", gs, envir = .GlobalEnv)
+  assign(x = "gs", gs, envir = .GlobalEnv)
   
   # initial model object
-  assign("maxnet_model", maxnet_model, envir = .GlobalEnv)
+  assign("maxent_model", maxent_model, envir = .GlobalEnv)
   
   # reduced model
-  assign("reduced_maxnet_mod", maxnet_model_red, envir = .GlobalEnv)
+  assign("reduced_maxent_model", maxent_model_red, envir = .GlobalEnv)
 
 }
 

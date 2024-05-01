@@ -203,30 +203,30 @@ tune_maxent(1, data_dir, output_dir)
 Isolate final best-fit model
 ```{r}
 # view top performing models
-head(gs_results@results[order(-gs_results@results$test_AUC), ])  
+head(gs@results[order(-gs@results$test_AUC), ])  
 
 # view parameters for best model
-#gs_results@models[[1]]
+gs@models[[1]]
 
 # isolate index location for the best parameters
-best_loc <- which.max(gs_results@results$test_AUC)
+best_locM <- which.max(gs@results$test_AUC)
 
 # retrain model with best parameters for final prediction
-best_model <- combineCV(gs_results@models[[best_loc]])
+best_modM <- combineCV(gs@models[[best_locM]])
 ```
 
 Plots
 ```{r}
 # plot AUC curves 
-plotROC(best_model, test = test)
+plotROC(best_modM, test = test)
 
 # plot prediction raster
-map <- predict(best_model,
+mapM <- predict(best_modM,
                data = predictor_stack_rast,
                type = "cloglog")
 
 # plot prediction map
-tm_shape(map) +
+tm_shape(mapM) +
   tm_raster() +
   tm_shape(occurrences) +
   tm_dots(size = 0.15) +
