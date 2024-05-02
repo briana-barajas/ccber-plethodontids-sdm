@@ -123,7 +123,8 @@ brt_model <- train(method = "BRT",
                       data = train)
 
 # select hyper parameters for testing
-param_tune <- list(distribution = "gaussian", #for continuous output variables
+param_tune <- list(
+  # distribution = "gaussian", #for continuous output variables
                    n.trees = seq(10, 100, 10),
                    interaction.depth = seq(1,6,1),
                    # shrinkage = seq(0.01, 0.1, 0.01),
@@ -159,7 +160,7 @@ best_locB <- which.max(gs@results$test_AUC)
 best_modB <- combineCV(gs@models[[best_locB]])
 
 ```
-__NOTE:__ The best perdorming values of shrinkage are actually larger, which is interesting. Typically the smaller the value of shrinkage, the higher the model accurace.
+__NOTE:__ The best performing values of shrinkage are actually larger, which is interesting. Typically the smaller the value of shrinkage, the higher the model accurace.
 
 ### Plots
 ```{r}
@@ -168,8 +169,9 @@ plotROC(best_modB, test = test)
 
 # plot prediction raster
 mapB <- predict(best_modB,
-               data = predictor_stack_rast,
-               type = "cloglog")
+               data = predictor_stack_rast)
+
+plotPred(mapB)
 
 # plot prediction map
 tm_shape(mapB) +
