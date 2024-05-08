@@ -38,7 +38,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   
   # remove individual rasters
   rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-     dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db)
+     dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db,
+     envir = .GlobalEnv)
   
   ## ========================================
   ##        Occurrence Data Preparation  ----
@@ -83,7 +84,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   # prepare cross validation folds
   k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
   
-  cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
+  cv_folds <- randomFolds(train, k = 3, only_presence = TRUE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -100,7 +101,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
     fc = c("lq", "lh", "lqp", "lqph", "lqpht"))
   
   # remove variables with importance less than 2% IF it doesn't decrease model performance
-  maxent_model_red <- reduceVar(maxent_model,
+  maxent_mod_reduced <- reduceVar(maxent_model,
                                 interactive = FALSE,
                                 th = 2,
                                 metric = "auc",
@@ -111,7 +112,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ##          Tune Hyperparameters       ----
   ## ========================================
   # test possible combinations with gridSearch
-  gs <- gridSearch(maxent_model_red,
+  gs <- gridSearch(maxent_mod_reduced,
                    interactive = FALSE,
                    hypers = param_tune, 
                    metric = "auc", 
@@ -120,21 +121,21 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  # test data (need for ROC plots)
-  assign("maxent_test", test, envir = .GlobalEnv)
-  
-  # predictor raster stack (needed for mapping)
-  assign("maxent_pred_stack", predictor_stack_rast, envir = .GlobalEnv)
-  
-  # grid search results
-  assign(x = "maxent_gs", gs, envir = .GlobalEnv)
-  
-  # initial model object
-  assign("maxent_model", maxent_model, envir = .GlobalEnv)
-  
-  # reduced model
-  assign("maxent_mod_reduced", maxent_model_red, envir = .GlobalEnv)
-
+  # # test data (need for ROC plots)
+  # assign("maxent_test", test, envir = .GlobalEnv)
+  # 
+  # # predictor raster stack (needed for mapping)
+  # assign("maxent_pred_stack", predictor_stack_rast, envir = .GlobalEnv)
+  # 
+  # # grid search results
+  # assign(x = "maxent_gs", gs, envir = .GlobalEnv)
+  # 
+  # # initial model object
+  # assign("maxent_model", maxent_model, envir = .GlobalEnv)
+  # 
+  # # reduced model
+  # assign("maxent_mod_reduced", maxent_mod_reduced, envir = .GlobalEnv)
+  return(list(occurrences, test, predictor_stack_rast, gs, maxent_model, maxent_mod_reduced))
 }
 
 

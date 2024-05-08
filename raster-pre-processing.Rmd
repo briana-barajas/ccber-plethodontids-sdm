@@ -225,6 +225,19 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   writeRaster(x = slope, gdal="COMPRESS=NONE",
               filename = paste0(path, "/slope/plot",
                                 plot_number, "/slope.asc"), overwrite=TRUE)
+  
+  ## ========================================
+  ##            Return Raster Stacks     ----
+  ## ========================================
+  # create raster stack ----
+  predictor_stack_rast <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
+                          slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
+                          fb_dn, hli, rk_dn)
+  
+  # export raster stack ----
+  writeRaster(x = predictor_stack_rast,
+              filename = paste0(path, "/stacked_rast/pred_stack_rast_p", i, ".asc"),
+              overwrite = TRUE)
 }
 ```
 
