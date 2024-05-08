@@ -4,7 +4,7 @@
 #' @param point_dir File path for occurrence data
 #' @param rast_dir File path for environmental variables
 #'
-#' @return Grid search results, initial maxent model, and reduced variable maxent model
+#' @return Grid search results, initial maxent model, reduced variable maxent model, and test data
 #'
 tune_maxent <- function(plot_number, point_dir, rast_dir){
   
@@ -73,15 +73,15 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   
   # split data into test and train
   split <- trainValTest(swd_obj, 
-                        test = 0.2, # % of data for testing
-                        val = 0, # % of of data for validation
-                        only_presence = TRUE, # F=split bg points, T=use all bg points
-                        seed = 2) # set seed for random split
+                        test = 0.2,
+                        val = 0, 
+                        only_presence = TRUE, 
+                        seed = 2) 
   train <- split[[1]]
   test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- nrow(distinct(occurrence_coords, x, y)) * 1/4
+  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.85)
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
   
@@ -95,8 +95,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   
   # select hyper parameters for testing
   param_tune <- list(
-    reg = seq(0.1, 3, 0.1), # regularization multiplier
-    fc = c("lq", "lh", "lqp", "lqph", "lqpht")) # feature class combination
+    reg = seq(0.1, 3, 0.1),
+    fc = c("lq", "lh", "lqp", "lqph", "lqpht"))
   
   # remove variables with importance less than 2% IF it doesn't decrease model performance
   maxent_model_red <- reduceVar(maxent_model,
@@ -118,10 +118,10 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ##             Return Results          ----
   ## ========================================
   # test data (need for ROC plots)
-  assign("test", test, envir = .GlobalEnv)
+  assign("maxent_test", test, envir = .GlobalEnv)
   
   # predictor raster stack (needed for mapping)
-  assign("predictor_stack_rast", predictor_stack_rast, envir = .GlobalEnv)
+  assign("maxent_pred_stack", predictor_stack_rast, envir = .GlobalEnv)
   
   # grid search results
   assign(x = "gs", gs, envir = .GlobalEnv)
@@ -133,9 +133,6 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   assign("reduced_maxent_model", maxent_model_red, envir = .GlobalEnv)
 
 }
-
-
-
 
 
 
