@@ -236,7 +236,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   
   # export raster stack ----
   writeRaster(x = predictor_stack_rast,
-              filename = paste0(path, "/stacked_rast/pred_stack_rast_p", i, ".asc"),
+              filename = paste0(path, "/stacked-rast/pred_stack_rast_p", i, ".asc"),
               overwrite = TRUE)
 }
 ```
