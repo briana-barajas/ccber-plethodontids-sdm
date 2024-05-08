@@ -118,18 +118,18 @@ createPredStack <- function(plot_number, new_crs = "WGS84", path){
   set.names(hli, "heat_load_index")
   set.names(slope, "slope")
   set.names(canopy, "canopy_cover")
-  set.names(dnd_dn, "downed_wood_cover")
+  set.names(dnd_dn, "density_downed_wood")
   set.names(li_dn, "litter_cover")
   set.names(gs_dn, "grass_cover")
   
-  set.names(ba_dn, "ba_dn")
-  set.names(br_dn, "br_dn")
-  set.names(br_ht, "br_ht")
-  set.names(dnd_st, "dnd_st")
+  set.names(ba_dn, "density_bare_ground")
+  set.names(br_dn, "brush_density")
+  set.names(br_ht, "brush_height")
+  set.names(dnd_st, "state_downed_wood")
   set.names(dnd_stc, "dnd_stc")
-  set.names(fb_dn, "fb_dn")
+  set.names(fb_dn, "forb_density")
   set.names(rk_dn, "rk_dn")
-  set.names(dnd_db, "dnd_db")
+  set.names(dnd_db, "diameter_downed_wood")
   
   ## ========================================
   ##           Update ext and res        ----
