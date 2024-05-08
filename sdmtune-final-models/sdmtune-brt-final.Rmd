@@ -124,10 +124,10 @@ brt_model <- train(method = "BRT",
 
 # select hyper parameters for testing
 param_tune <- list(
-  # distribution = "gaussian", #for continuous output variables
+  distribution = "gaussian", #for continuous output variables
                    n.trees = seq(10, 100, 10),
                    interaction.depth = seq(1,6,1),
-                   # shrinkage = seq(0.01, 0.1, 0.01),
+                   shrinkage = seq(0.01, 0.1, 0.01),
                    bag.fraction = seq(0.5, 0.75, 0.05))
 
 # remove variables with importance less than 2% IF it doesn't decrease model performance
@@ -162,22 +162,71 @@ best_modB <- combineCV(gs@models[[best_locB]])
 ```
 __NOTE:__ The best performing values of shrinkage are actually larger, which is interesting. Typically the smaller the value of shrinkage, the higher the model accurace.
 
-### Plots
+## Function Testing
+```{r}
+rm(list = ls())
+
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+output_dir <- here("data", "updated-rasters")
+data_dir <- here("data", "CampRoberts_spatial_data")
+
+# read occurences for plotting
+occurrences <- st_read(here(data_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  st_make_valid() %>% 
+  clean_names() %>% 
+  filter(plot == 1)
+
+# source function
+source(here("sdmtune-final-models", "sdmtune-brt-final-function.R"))
+
+# test function with plot
+tune_brt(1, data_dir, output_dir)
+```
+
+```{r}
+# view top performing models
+head(brt_gs@results[order(-brt_gs@results$test_AUC), ])  
+
+# view parameters for best model
+brt_gs@models[[1]]
+
+# isolate index location for the best parameters
+best_locB <- which.max(brt_gs@results$test_AUC)
+
+# retrain model with best parameters for final prediction
+best_modB <- combineCV(brt_gs@models[[best_locB]])
+```
+
 ```{r}
 # plot AUC curves 
-plotROC(best_modB, test = test)
+plotROC(best_modB, test = brt_test)
 
 # plot prediction raster
 mapB <- predict(best_modB,
-               data = predictor_stack_rast)
-
-plotPred(mapB)
+               data = brt_pred_stack)
 
 # plot prediction map
+plotPred(mapB)
+
 tm_shape(mapB) +
-  tm_raster() +
+  tm_raster(palette = "BuPu") +
   tm_shape(occurrences) +
-  tm_dots(size = 0.15) +
+  tm_dots(size = 0.1) +
   tm_layout(legend.position = c(1, 0.2))
 ```
 

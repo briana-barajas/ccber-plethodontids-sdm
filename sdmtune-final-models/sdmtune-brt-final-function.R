@@ -70,7 +70,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir){
                         env = predictor_stack_rast)
   
   # update swd_object to add sample to background
-  swd_obj <- addSamplesToBg(swd_obj)
+  #swd_obj <- addSamplesToBg(swd_obj)
   
   # split data into test and train
   split <- trainValTest(swd_obj, 
@@ -82,7 +82,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir){
   test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.9)
+  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
   
@@ -91,29 +91,33 @@ tune_brt <- function(plot_number, point_dir, rast_dir){
   ## ========================================
   # define model
   brt_model <- train(method = "BRT", 
+                     progress = FALSE,
                      folds = cv_folds,
                      data = train)
   
   # select hyper parameters for testing
   param_tune <- list(
     distribution = "gaussian",
-    n.trees = seq(10, 100, 10),
-    interaction.depth = seq(1,6,1),
-    shrinkage = seq(0.01, 0.1, 0.01),
-    bag.fraction = seq(0.5, 0.75, 0.05))
+    n.trees = seq(10, 100, 10)
+    # interaction.depth = seq(1,6,1),
+    # shrinkage = seq(0.01, 0.1, 0.01),
+    # bag.fraction = seq(0.5, 0.75, 0.05)
+    )
   
   # remove variables with importance less than 2% IF it doesn't decrease model performance
   brt_model_red <- reduceVar(brt_model,
-                                th = 2,
-                                metric = "auc",
-                                test = test,
-                                use_jk = TRUE)
+                             interactive = FALSE,
+                             th = 2,
+                             metric = "auc",
+                             test = test,
+                             use_jk = TRUE)
   
   ## ========================================
   ##          Tune Hyperparameters       ----
   ## ========================================
   # test possible combinations with gridSearch
   gs <- gridSearch(brt_model_red, 
+                   interactive = FALSE,
                    hypers = param_tune, 
                    metric = "auc", 
                    test = test)
@@ -134,7 +138,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir){
   assign("brt_model", brt_model, envir = .GlobalEnv)
   
   # reduced model
-  assign("brt_model_red", brt_model_red, envir = .GlobalEnv)
+  assign("brt_mod_reduced", brt_model_red, envir = .GlobalEnv)
   
 }
 
