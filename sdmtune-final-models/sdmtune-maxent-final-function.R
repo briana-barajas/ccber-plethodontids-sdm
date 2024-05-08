@@ -64,9 +64,9 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ## ========================================
   # create SWD object using data
   swd_obj <- prepareSWD(species = "Black-bellied Slender Salamander",
-                        p = occurrence_coords, # occurrence points
-                        a = bg_coords, # background point coordinates
-                        env = predictor_stack_rast) # background layers
+                        p = occurrence_coords,
+                        a = bg_coords,
+                        env = predictor_stack_rast)
   
   # update swd_object to add sample to background
   swd_obj <- addSamplesToBg(swd_obj)
@@ -81,7 +81,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.85)
+  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
   
@@ -89,7 +89,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ##          Define Model & Variables   ----
   ## ========================================
   # define model
-  maxent_model <- train(method = "Maxnet", 
+  maxent_model <- train(method = "Maxnet",
+                        progress = FALSE,
                         folds = cv_folds,
                         data = train)
   
@@ -100,6 +101,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   
   # remove variables with importance less than 2% IF it doesn't decrease model performance
   maxent_model_red <- reduceVar(maxent_model,
+                                interactive = FALSE,
                                 th = 2,
                                 metric = "auc",
                                 test = test,
@@ -109,7 +111,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   ##          Tune Hyperparameters       ----
   ## ========================================
   # test possible combinations with gridSearch
-  gs <- gridSearch(maxent_model_red, 
+  gs <- gridSearch(maxent_model_red,
+                   interactive = FALSE,
                    hypers = param_tune, 
                    metric = "auc", 
                    test = test)
@@ -124,13 +127,13 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   assign("maxent_pred_stack", predictor_stack_rast, envir = .GlobalEnv)
   
   # grid search results
-  assign(x = "gs", gs, envir = .GlobalEnv)
+  assign(x = "maxent_gs", gs, envir = .GlobalEnv)
   
   # initial model object
   assign("maxent_model", maxent_model, envir = .GlobalEnv)
   
   # reduced model
-  assign("reduced_maxent_model", maxent_model_red, envir = .GlobalEnv)
+  assign("maxent_mod_reduced", maxent_model_red, envir = .GlobalEnv)
 
 }
 

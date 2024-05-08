@@ -197,40 +197,46 @@ data_dir <- here("data", "CampRoberts_spatial_data")
 source(here("sdmtune-final-models", "sdmtune-maxent-final-function.R"))
 
 # test function with plot
-tune_maxent(1, data_dir, output_dir)
+tune_maxent(4, data_dir, output_dir)
 ```
 
 Isolate final best-fit model
 ```{r}
 # view top performing models
-head(gs@results[order(-gs@results$test_AUC), ])  
+head(maxent_gs@results[order(-maxent_gs@results$test_AUC), ])  
 
 # view parameters for best model
-gs@models[[1]]
+maxent_gs@models[[1]]
 
 # isolate index location for the best parameters
-best_locM <- which.max(gs@results$test_AUC)
+best_locM <- which.max(maxent_gs@results$test_AUC)
 
 # retrain model with best parameters for final prediction
-best_modM <- combineCV(gs@models[[best_locM]])
+best_modM <- combineCV(maxent_gs@models[[best_locM]])
 ```
 
 Plots
 ```{r}
 # plot AUC curves 
-plotROC(best_modM, test = test)
+plotROC(best_modM, test = maxent_test)
 
 # plot prediction raster
 mapM <- predict(best_modM,
-               data = predictor_stack_rast,
+               data = maxent_pred_stack,
                type = "cloglog")
 
 # plot prediction map
+plotPred(mapM)
+
 tm_shape(mapM) +
   tm_raster() +
   tm_shape(occurrences) +
   tm_dots(size = 0.15) +
   tm_layout(legend.position = c(1, 0.2))
+
+tm_shape(occurrences) +
+  tm_dots()
+  
 ```
 
 
