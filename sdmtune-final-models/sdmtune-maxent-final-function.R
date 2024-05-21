@@ -3,10 +3,12 @@
 #' @param plot_number Numeric plot number
 #' @param point_dir File path for occurrence data
 #' @param rast_dir File path for environmental variables
+#' @param k_folds The number of cross validation folds
+#' @param bg_points The number of background points
 #'
 #' @return Grid search results, initial maxent model, reduced variable maxent model, and test data
 #'
-tune_maxent <- function(plot_number, point_dir, rast_dir){
+tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   
   ## ========================================
   ##              Load Data              ----
@@ -32,14 +34,13 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   }
   
   # create full predictor stack
-  predictor_stack_rast <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
+  maxent_pred_stack <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
                             slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
                             fb_dn, hli, rk_dn)
   
   # remove individual rasters
-  rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-     dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db,
-     envir = .GlobalEnv)
+  rm(ls(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
+        dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db), envir = .GlobalEnv)
   
   ## ========================================
   ##        Occurrence Data Preparation  ----
@@ -52,8 +53,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
     dplyr::select(x,y)
   
   # create background points using raster stack
-  bg_points <- spatSample(predictor_stack_rast,
-                          size = 1000,
+  bg_points <- spatSample(maxent_pred_stack,
+                          size = bg_points,
                           replace = TRUE,
                           xy = TRUE)
   
@@ -67,7 +68,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   swd_obj <- prepareSWD(species = "Black-bellied Slender Salamander",
                         p = occurrence_coords,
                         a = bg_coords,
-                        env = predictor_stack_rast)
+                        env = maxent_pred_stack)
   
   # update swd_object to add sample to background
   swd_obj <- addSamplesToBg(swd_obj)
@@ -79,12 +80,12 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
                         only_presence = TRUE, 
                         seed = 2) 
   train <- split[[1]]
-  test <- split[[2]]
+  maxent_test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
+  #k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
   
-  cv_folds <- randomFolds(train, k = 3, only_presence = TRUE)
+  cv_folds <- randomFolds(train, k = k_folds, only_presence = TRUE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -102,40 +103,30 @@ tune_maxent <- function(plot_number, point_dir, rast_dir){
   
   # remove variables with importance less than 2% IF it doesn't decrease model performance
   maxent_mod_reduced <- reduceVar(maxent_model,
-                                interactive = FALSE,
-                                th = 2,
-                                metric = "auc",
-                                test = test,
-                                use_jk = TRUE)
+                                  interactive = FALSE,
+                                  verbose = FALSE,
+                                  th = 2,
+                                  metric = "auc",
+                                  test = maxent_test,
+                                  use_jk = TRUE)
   
   ## ========================================
   ##          Tune Hyperparameters       ----
   ## ========================================
   # test possible combinations with gridSearch
-  gs <- gridSearch(maxent_mod_reduced,
+  maxent_gs <- gridSearch(maxent_mod_reduced,
                    interactive = FALSE,
+                   progress = FALSE,
                    hypers = param_tune, 
                    metric = "auc", 
-                   test = test)
+                   test = maxent_test)
   
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  # # test data (need for ROC plots)
-  # assign("maxent_test", test, envir = .GlobalEnv)
-  # 
-  # # predictor raster stack (needed for mapping)
-  # assign("maxent_pred_stack", predictor_stack_rast, envir = .GlobalEnv)
-  # 
-  # # grid search results
-  # assign(x = "maxent_gs", gs, envir = .GlobalEnv)
-  # 
-  # # initial model object
-  # assign("maxent_model", maxent_model, envir = .GlobalEnv)
-  # 
-  # # reduced model
-  # assign("maxent_mod_reduced", maxent_mod_reduced, envir = .GlobalEnv)
-  return(list(occurrences, test, predictor_stack_rast, gs, maxent_model, maxent_mod_reduced))
+  res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_model, maxent_mod_reduced)
+  return(res)
+
 }
 
 
