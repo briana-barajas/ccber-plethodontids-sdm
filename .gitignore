@@ -19,3 +19,7 @@ outputs/*/*/species.csv
 outputs/*/*/species.lambdas
 
 
+dismo-crop-plot-maxent/
+dismo-default-maxent/
+sdmtune-cv-testing/
+troubleshooting-img/
