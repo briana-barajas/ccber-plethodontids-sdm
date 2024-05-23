@@ -17,7 +17,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   plot_name <- paste0("plot", plot_number)
   
   # load occurrence points
-  occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
     st_make_valid() %>% 
     clean_names() %>% 
     filter(plot == plot_number)
@@ -39,8 +39,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
                             fb_dn, hli, rk_dn)
   
   # remove individual rasters
-  rm(ls(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-        dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db), envir = .GlobalEnv)
+  rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
+        dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db, envir = .GlobalEnv)
   
   ## ========================================
   ##        Occurrence Data Preparation  ----
@@ -125,6 +125,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ##             Return Results          ----
   ## ========================================
   res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_model, maxent_mod_reduced)
+  names(res) <- list("maxent_test", "maxent_pred_stack", "maxent_gs", "maxent_model", "maxent_mod_reduced")
+  
   return(res)
 
 }

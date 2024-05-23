@@ -17,7 +17,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   plot_name <- paste0("plot", plot_number)
   
   # load occurrence points
-  occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")) %>% 
+  occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
     st_make_valid() %>% 
     clean_names() %>% 
     filter(plot == plot_number)
@@ -39,8 +39,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
                             fb_dn, hli, rk_dn)
   
   # remove individual rasters
-  rm(ls(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-     dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db), envir = .GlobalEnv)
+  rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
+     dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db, envir = .GlobalEnv)
   
   ## ========================================
   ##        Occurrence Data Preparation  ----
@@ -74,7 +74,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   split <- trainValTest(swd_obj, 
                         test = 0.2,
                         val = 0, 
-                        only_presence = FALSE, 
+                        only_presence = TRUE, 
                         seed = 2) 
   train <- split[[1]]
   brt_test <- split[[2]]
@@ -82,7 +82,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   # prepare cross validation folds
   #k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
   
-  cv_folds <- randomFolds(train, k = k_folds, only_presence = FALSE)
+  cv_folds <- randomFolds(train, k = k_folds, only_presence = TRUE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -97,8 +97,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   param_tune <- list(
     distribution = "gaussian",
     n.trees = seq(10, 100, 10),
-    interaction.depth = seq(1,6,1),
-    shrinkage = seq(0.01, 0.1, 0.01),
+    # interaction.depth = seq(1,6,1),
+    # shrinkage = seq(0.01, 0.1, 0.01),
     bag.fraction = seq(0.5, 0.75, 0.05)
     )
   
@@ -127,6 +127,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ## ========================================
   # return list of results needed for predictions
   res <- list(brt_test, brt_pred_stack, brt_gs, brt_model, brt_mod_reduced)
+  names(res) <- list("brt_test", "brt_pred_stack", "brt_gs", "brt_model", "brt_mod_reduced")
+  
   return(res)
   
 }

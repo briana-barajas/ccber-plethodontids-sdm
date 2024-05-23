@@ -28,18 +28,152 @@ library(rJava)
 rast_dir <- here("data", "updated-rasters")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
-# source function
+# source functions
 source(here("sdmtune-final-models", "sdmtune-maxent-final-function.R"))
 source(here("sdmtune-final-models", "sdmtune-brt-final-function.R"))
 
 ```
 
+## Plot Summary
 
-## Modeling
-Iterate through all plots, storing predictions for each plot and model.
+Each plot indicates a different transect where cover board surveys were conducted, and contains it's own unique values of occurrence points. The maximum entropy model is often noted for it's capabilities even when given a small data set. Since each plot has a unique number of occurence points, some of the analyses conducted compare plots with low vs. high numbers of points to see how the AUC was affected.
+
+| Plot Number | Number of Occurences |
+|-------------|----------------------|
+| 1           | 51                   |
+| 2           | 57                   |
+| 3           | 78\*                 |
+| 4           | 19                   |
+| 5           | 72                   |
+| 6           | 39                   |
+| 7           | 10\*                 |
+| 8           | 21                   |
+
+## Comparing Values of K
 
 ```{r}
-for (i in seq(1:2)) {
+
+# list potential values of K
+k_list <- seq(5, 50, 5)
+
+# create empty data frames for predictions
+maxent_df <- data.frame()
+brt_df <- data.frame()
+
+
+
+# model predictions for all value of k
+for (i in k_list) {
+  
+  # maxent predictions
+  print(paste0("Maxent modeling with k = ", i))
+  maxent_results <- tune_maxent(3, point_dir, rast_dir, i, 1000)
+  maxent_gs <- maxent_results[["maxent_gs"]]
+  
+  # add to data frame
+  new_row <- as.data.frame(maxent_gs@results) %>% slice_max(order_by = test_AUC)
+  new_row$k <- i
+  maxent_df <- rbind(maxent_df, new_row)
+  
+  # BRT predictions
+  print(paste0("BRT modeling with k = ", i))
+  brt_results <- tune_brt(3, point_dir, rast_dir, i, 1000)
+  brt_gs <- brt_results[["brt_gs"]]
+  
+  # add to data frame
+  new_row <- as.data.frame(brt_gs@results) %>% slice_max(order_by = test_AUC)
+  new_row$k <- i
+  brt_df <- rbind(brt_df, new_row)
+}
+
+# save results
+write_csv(brt_df, here("outputs", "input-auc-assessment", "brt_k_folds.csv"))
+write_csv(maxent_df, here("outputs", "input-auc-assessment", "maxent_k_folds.csv"))
+
+# plot results
+ggplot(brt_df, aes(k, test_AUC)) +
+  geom_point(col = "darkorange3", size = 2) +
+  geom_smooth(se = FALSE, col = "darkorange") +
+  theme_minimal() +
+  labs(y = "Test AUC", title = "BRT K-fold Assessment")
+
+ggplot(maxent_df, aes(k, test_AUC)) +
+  geom_point(col = "darkblue", size = 2) +
+  geom_smooth(se = FALSE) +
+  theme_minimal() +
+  labs(y = "Test AUC", title = "Maxent K-fold Assessment")
+
+```
+
+
+## Comparing the Number of Background Points
+
+```{r}
+# ..........................calculate AUC for varying bg_points...................
+# list potential number of background points
+bg_list <- c(10, 120, 230, 340, 450, 560, 670, 780, 890, 1000)
+
+# create empty data frames for predictions
+maxent_df1 <- data.frame()
+brt_df2 <- data.frame()
+
+
+# model predictions for all number of bg points
+for (i in bg_list) {
+  
+  # # maxent predictions
+  # print(paste0("maxent modeling with bg_points = ", i))
+  # maxent_results <- tune_maxent(3, point_dir, rast_dir, 5, i)
+  # maxent_gs <- maxent_results[["maxent_gs"]]
+  # 
+  # # add to data frame
+  # new_row <- as.data.frame(maxent_gs@results) %>% slice_max(order_by = test_AUC)
+  # new_row$bg_points <- i
+  # maxent_df1 <- rbind(maxent_df1, new_row)
+  
+  # BRT predictions
+  print(paste0("brt modeling with bg_points = ", i))
+  brt_results <- tune_brt(3, point_dir, rast_dir, 5, i)
+  brt_gs <- brt_results[["brt_gs"]]
+  
+  # add to data frame
+  new_row <- as.data.frame(brt_gs@results) %>% slice_max(order_by = test_AUC)
+  new_row$bg_points <- i
+  brt_df2 <- rbind(brt_df2, new_row)
+}
+
+# ...........................clean data.............................
+brt_df1$only_presence <- "False"
+brt_df2$only_presence <- "True"
+
+brt_df_bg <- rbind(brt_df1, brt_df2)
+
+
+# ..........................plot results............................
+
+ggplot(maxent_df1, aes(bg_points, test_AUC)) +
+  geom_point(col = "darkorange3", size = 2) +
+  geom_smooth(se = FALSE, col = "darkorange") +
+  labs(x = "Number of Background Points", y = "Test AUC", title = "Maxent - Baxkground Point Assessment") +
+  theme_minimal()
+
+ggplot(brt_df_bg, aes(bg_points, test_AUC, col = only_presence, shape = only_presence)) +
+  geom_point(size = 2) +
+  scale_color_manual(values = c("maroon", "navy")) +
+  geom_smooth(se = FALSE, aes(col = only_presence)) +
+  labs(x = "Number of Background Points", y = "Test AUC", title = "BRT - Background Point Assessment") +
+  theme_minimal()
+
+```
+
+
+
+##### Start old work
+
+Modeling Iterate through all plots, storing predictions for each plot and model.
+
+```{r}
+# for (i in seq(1:2)) {
   
   # print progress statement
   print(paste0("Running Maxent Plot:", i))
@@ -54,11 +188,12 @@ for (i in seq(1:2)) {
             compress = "gz")
   writeRaster(rast, 
               filename = here("outputs", "final-pred", paste0("maxent_rast_p", i)))
-}
+# }
 
 ```
 
-## Read in Results
+Read in Results
+
 ```{r}
 output_dir <- here("outputs", "final-pred")
 
@@ -69,7 +204,7 @@ for (i in 1:2) {
 }
 ```
 
-## Predictions
+Predictions
 
 ```{r}
 t_test <- maxent_res_p1[[2]]
@@ -84,6 +219,3 @@ best_modM <- combineCV(t_gs@models[[best_locM]])
 plotROC(best_modM, test = t_test)
 
 ```
-
-
-

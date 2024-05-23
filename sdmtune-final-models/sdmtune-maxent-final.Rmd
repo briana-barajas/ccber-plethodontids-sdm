@@ -34,8 +34,8 @@ output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
 
 # set plot number
-plot_name <- "plot1"
-plot_number <- 1
+plot_name <- "plot4"
+plot_number <- 4
 ```
 
 ```{r}
@@ -209,6 +209,9 @@ max_4 <- tune_maxent(4, data_dir, output_dir)
 
 Isolate final best-fit model
 ```{r}
+maxent_gs <- max_4[[4]]
+maxent_test <- max_4[[2]]
+
 # view top performing models
 head(maxent_gs@results[order(-maxent_gs@results$test_AUC), ])  
 
@@ -229,7 +232,7 @@ plotROC(best_modM, test = maxent_test)
 
 # plot prediction raster
 mapM <- predict(best_modM,
-               data = maxent_pred_stack,
+               data = predictor_stack_rast,
                type = "cloglog")
 
 # plot prediction map
