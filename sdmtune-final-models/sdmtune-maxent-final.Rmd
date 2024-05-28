@@ -34,8 +34,8 @@ output_dir <- here("data", "updated-rasters")
 data_dir <- here("data", "CampRoberts_spatial_data")
 
 # set plot number
-plot_name <- "plot4"
-plot_number <- 4
+plot_name <- "plot1"
+plot_number <- 1
 ```
 
 ```{r}
@@ -111,7 +111,7 @@ test <- split[[2]]
 # prepare cross validation folds
 k_max <- nrow(distinct(occurrence_coords, x, y)) - 1
 
-cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
+cv_folds <- randomFolds(train, k = 3, only_presence = TRUE)
 
 ```
 For data processing, the primary decision to be made was regarding the inclusion of background points. If `only_presence` is set to false, background points are split into test-train data along with the occurrences. If it's true, all the background points are used for model predictions. Background points are not equivalent to pseudoabsences, as they may occur in areas where the species is present. We want to set `only_presence` to TRUE, which is standard for presence-only methods.
@@ -164,7 +164,7 @@ map <- predict(maxnet_model_red,
 
 # plot prediction map
 tm_shape(map) +
-  tm_raster() +
+  tm_raster(palette = "YlGnBu") +
   tm_shape(occurrences) +
   tm_dots(size = 0.15) +
   tm_layout(legend.position = c(1, 0.2))

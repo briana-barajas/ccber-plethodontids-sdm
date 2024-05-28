@@ -4,15 +4,16 @@
 #' @param point_dir File path for occurrence data
 #' @param rast_dir File path for environmental variables
 #' @param k_folds The number of cross validation folds
-#' @param bg_points The number of background points
 #'
 #' @return Grid search results, initial maxent model, reduced variable maxent model, and test data
 #'
-tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
+tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds){
   
   ## ========================================
   ##              Load Data              ----
   ## ========================================
+  print(paste0(" Load Data"))
+  
   # store plot as character
   plot_name <- paste0("plot", plot_number)
   
@@ -45,6 +46,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ## ========================================
   ##        Occurrence Data Preparation  ----
   ## ========================================
+  print(paste0("Occurrence Data Preparation"))
+  
   # update occurence df, isolating occurrence lat and long
   occurrence_coords <- occurrences %>% 
     st_drop_geometry() %>% 
@@ -54,7 +57,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   
   # create background points using raster stack
   bg_points <- spatSample(maxent_pred_stack,
-                          size = bg_points,
+                          size = 1000,
                           replace = TRUE,
                           xy = TRUE)
   
@@ -64,6 +67,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ## ========================================
   ##           Model Pre-Processing      ----
   ## ========================================
+  print(paste0("Model Pre-Processing"))
+  
   # create SWD object using data
   swd_obj <- prepareSWD(species = "Black-bellied Slender Salamander",
                         p = occurrence_coords,
@@ -90,6 +95,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ## ========================================
   ##          Define Model & Variables   ----
   ## ========================================
+  print(paste0("Define Model & Variables"))
+  
   # define model
   maxent_model <- train(method = "Maxnet",
                         progress = FALSE,
@@ -113,6 +120,8 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ## ========================================
   ##          Tune Hyperparameters       ----
   ## ========================================
+  print(paste0("Tune Hyperparameters"))
+  
   # test possible combinations with gridSearch
   maxent_gs <- gridSearch(maxent_mod_reduced,
                    interactive = FALSE,
@@ -124,9 +133,13 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds, bg_points){
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_model, maxent_mod_reduced)
-  names(res) <- list("maxent_test", "maxent_pred_stack", "maxent_gs", "maxent_model", "maxent_mod_reduced")
-  
+  res <- list(maxent_test, 
+              # maxent_pred_stack, 
+              maxent_gs, maxent_model, maxent_mod_reduced)
+  names(res) <- list("maxent_test", 
+                     # "maxent_pred_stack", 
+                     "maxent_gs", "maxent_model", "maxent_mod_reduced")
+
   return(res)
 
 }
