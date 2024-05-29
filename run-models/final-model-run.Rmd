@@ -1,0 +1,89 @@
+---
+title: "Final Run of All Plots"
+author: "Briana Barajas"
+date: 2024-05-08
+---
+
+## Preparation
+
+```{r}
+rm(list = ls())
+
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+rast_dir <- here("data", "updated-rasters")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
+# source function
+source(here("sdmtune-final-models", "sdmtune-maxent-final-function.R"))
+source(here("sdmtune-final-models", "sdmtune-brt-final-function.R"))
+
+```
+
+
+## Modeling
+Iterate through all plots, storing predictions for each plot and model.
+
+```{r}
+for (i in seq(1:2)) {
+  
+  # print progress statement
+  print(paste0("Running Maxent Plot:", i))
+  
+  # run maxent model for all plots
+  m_res <- tune_maxent(i, point_dir, rast_dir)
+  rast <- m_res[[3]]
+  
+  # store results in final predictions folder
+  write_rds(m_res, 
+            file = here("outputs", "final-pred", paste0("maxent_p", i)), 
+            compress = "gz")
+  writeRaster(rast, 
+              filename = here("outputs", "final-pred", paste0("maxent_rast_p", i)))
+}
+
+```
+
+## Read in Results
+```{r}
+output_dir <- here("outputs", "final-pred")
+
+# read in maxent files
+for (i in 1:2) {
+  m_res <- read_rds(paste0(output_dir, "/maxent_p", i))
+  assign(paste0("maxent_res_p", i), m_res, envir = .GlobalEnv)
+}
+```
+
+## Predictions
+
+```{r}
+t_test <- maxent_res_p1[[2]]
+t_gs <- maxent_res_p1[[4]]
+
+best_locM <- which.max(t_gs@results$test_AUC)
+
+# retrain model with best parameters for final prediction
+best_modM <- combineCV(t_gs@models[[best_locM]])
+
+
+plotROC(best_modM, test = t_test)
+
+```
+
+
+
