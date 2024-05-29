@@ -12,33 +12,37 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##              Load Data              ----
   ## ========================================
-  # store plot as character string 
-  plot_name <- paste0("plot", plot_number)
+  # # store plot as character string
+  # plot_name <- paste0("plot", plot_number)
   
   # load occurrence points
   occurrences <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
     clean_names() %>% 
     filter(plot == plot_number)
   
-  # list all environmental raster names
-  env_layer_names <- c("ba_dn", "br_ht","dnd_db", "dnd_st", "elev", "gs_dn", 
-                       "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
-                       "dnd_stc", "fb_dn", "hli", "rk_dn")
+  # read in predictor stack
+  pred_stack_name <- paste0("predictor_stack_rast_p", plot_number, ".tif")
+  brt_pred_stack <- rast(here(rast_dir, pred_stack_name))
   
-  # load environmental rasters
-  for (i in env_layer_names) {
-    layer <- rast(here(rast_dir, i, plot_name, paste0(i, ".asc")))
-    assign(x = paste0(i), layer, envir = .GlobalEnv)
-  }
-  
-  # create full predictor stack
-  brt_pred_stack <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
-                      slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
-                      fb_dn, hli, rk_dn)
-  
-  # remove individual rasters
-  rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-     dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db, envir = .GlobalEnv)
+  # # list all environmental raster names
+  # env_layer_names <- c("ba_dn", "br_ht","dnd_db", "dnd_st", "elev", "gs_dn", 
+  #                      "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
+  #                      "dnd_stc", "fb_dn", "hli", "rk_dn")
+  # 
+  # # load environmental rasters
+  # for (i in env_layer_names) {
+  #   layer <- rast(here(rast_dir, i, plot_name, paste0(i, ".asc")))
+  #   assign(x = paste0(i), layer, envir = .GlobalEnv)
+  # }
+  # 
+  # # create full predictor stack
+  # brt_pred_stack <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
+  #                     slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
+  #                     fb_dn, hli, rk_dn)
+  # 
+  # # remove individual rasters
+  # rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
+  #    dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db, envir = .GlobalEnv)
   
   ## ========================================
   ##        Occurrence Data Preparation  ----
@@ -47,12 +51,12 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   p_coords <- occurrences %>% 
     filter(basp_pa == 1) %>% 
     rename(y = latitude, x = longitude) %>% 
-    select(x,y)
+    dplyr::select(x,y)
   
   a_coords <- occurrences %>% 
     filter(basp_pa == 0) %>% 
     rename(y = latitude, x = longitude) %>% 
-    select(x,y)
+    dplyr::select(x,y)
   
   rm(occurrences, envir = .GlobalEnv)
   
