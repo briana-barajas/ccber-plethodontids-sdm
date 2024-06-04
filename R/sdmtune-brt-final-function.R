@@ -3,11 +3,11 @@
 #' @param plot_number Numeric plot number
 #' @param point_dir File path for occurrence point data
 #' @param rast_dir File path for environmental variables
-#' @param k_folds The number of cross validation folds
+#' @param reduced_only Run grid search for reduced model only, default TRUE
 #'
 #' @return Grid search results, initial BRT model, reduced variable BRT model, and test data
 #'
-tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
+tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
   
   ## ========================================
   ##              Load Data              ----
@@ -39,8 +39,6 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
     rename(y = latitude, x = longitude) %>% 
     dplyr::select(x,y)
   
-  rm(occurrences, envir = .GlobalEnv)
-  
   ## ========================================
   ##           Model Pre-Processing      ----
   ## ========================================
@@ -64,7 +62,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   # prepare cross validation folds
   #k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
   
-  cv_folds <- randomFolds(train, k = k_folds, only_presence = FALSE)
+  cv_folds <- randomFolds(train, k = 3, only_presence = FALSE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -86,39 +84,94 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
     bag.fraction = seq(0.5, 0.75, 0.05)
   )
   
-  print(paste0("Reduce Variables"))
-  # remove variables with importance less than 2% IF it doesn't decrease model performance
-  brt_mod_reduced <- reduceVar(brt_model,
-                               interactive = FALSE,
-                               verbose = FALSE,
-                               th = 2,
-                               metric = "auc",
-                               test = brt_test,
-                               use_jk = TRUE)
   
   ## ========================================
-  ##          Tune Hyperparameters       ----
+  ##    Tune Hyperparameters (REDUCE ONLY) ----
   ## ========================================
-  print(paste0("Tune Hyperparameters"))
   
-  # test possible combinations with gridSearch
-  brt_gs <- gridSearch(brt_mod_reduced, 
-                       interactive = FALSE,
-                       progress = FALSE,
-                       hypers = param_tune, 
-                       metric = "auc", 
-                       test = brt_test)
+  
+  if(reduced_only == TRUE){
+    
+    # ..............reduce variables.............
+    
+    print(paste0("Reduce Variables"))
+    
+    brt_model <- reduceVar(brt_model,
+                           interactive = FALSE,
+                           verbose = FALSE,
+                           th = 2,
+                           metric = "auc",
+                           test = brt_test,
+                           use_jk = TRUE)
+    
+    # ..............grid search.............
+    
+    print(paste0("Tune Hyperparameters"))
+    
+    brt_gs <- gridSearch(brt_model, 
+                         interactive = FALSE,
+                         progress = FALSE,
+                         hypers = param_tune, 
+                         metric = "auc", 
+                         test = brt_test)
+    
+    
+    # ...............return results...............
+    
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs")
+    
+    
+    ## ========================================
+    ##       Tune Hyperparameters (BOTH)  ----
+    ## ========================================
+    
+  } else{
+    
+    # ..............reduce variables.............
+    print(paste0("Reduce Variables"))
+    
+    brt_mod_reduced <- reduceVar(brt_model,
+                                 interactive = FALSE,
+                                 verbose = FALSE,
+                                 th = 2,
+                                 metric = "auc",
+                                 test = brt_test,
+                                 use_jk = TRUE)
+    
+    # ..............grid search.............
+    brt_gs_full <- gridSearch(brt_model, 
+                              interactive = FALSE,
+                              progress = FALSE,
+                              hypers = param_tune, 
+                              metric = "auc", 
+                              test = brt_test)
+    
+    brt_gs_reduced <- gridSearch(brt_mod_reduced, 
+                                 interactive = FALSE,
+                                 progress = FALSE,
+                                 hypers = param_tune, 
+                                 metric = "auc", 
+                                 test = brt_test)
+    
+    # ...............return results...............
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_full, brt_gs_reduced)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_full", "brt_gs_reduced")
+    
+  } # END if-else, only_reduced = FALSE
+  
   
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  # return list of results needed for predictions
-  res <- list(brt_test, brt_pred_stack, brt_gs, brt_model, brt_mod_reduced)
-  names(res) <- list("brt_test", "brt_pred_stack", "brt_gs", "brt_model", "brt_mod_reduced")
+  
+  # # return list of results needed for predictions
+  # res <- list(brt_test, brt_pred_stack, brt_gs, brt_model, brt_mod_reduced)
+  # names(res) <- list("brt_test", "brt_pred_stack", "brt_gs", "brt_model", "brt_mod_reduced")
   
   return(res)
   
-}
+} # END function
 
 
 

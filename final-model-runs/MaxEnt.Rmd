@@ -63,34 +63,78 @@ maxent_res <- tune_maxent(plot_number = 1,
                           rast_dir = rast_dir,
                           k_folds = 3)
 
-# # pull models from results
-# maxent_test_obj <- maxent_res[["maxent_test"]]
-# maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
-# maxent_gs <- maxent_res[["maxent_gs"]]
-# maxent_full_model <- maxent_res[["maxent_model"]]
-# maxent_reduced_model <- maxent_res[["maxent_mod_reduced"]]
-# 
-# # isolate the top performing model & predict
-# maxent_id <- which.max(maxent_gs@results$test_AUC)
-# maxent_best_mod <- combineCV(maxent_gs@models[[maxent_id]])
-# maxent_map <- predict(maxent_best_mod, data = maxent_pred_stack,
-#                       type = "cloglog",
-#                       clamp = TRUE)
-# 
-# # plot results
-# plotROC(maxent_best_mod, test = maxent_test_obj)
-# 
-# tm_shape(maxent_map) +
-#   tm_raster(midpoint = 0) +
-#   tm_shape(points) +
-#   tm_dots(size = 0.1) +
-#   tm_layout(legend.position = c(1, 0.2))
+# pull models from results
+maxent_test_obj <- maxent_res[["maxent_test"]]
+maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
+maxent_gs <- maxent_res[["maxent_gs"]]
+maxent_reduced_model <- maxent_res[["maxent_mod_reduced"]]
+maxent_bg_coords <- maxent_res[["bg_coords"]]
+
+# isolate the top performing model & predict
+maxent_id <- which.max(maxent_gs@results$test_AUC)
+maxent_best_mod <- combineCV(maxent_gs@models[[maxent_id]])
+maxent_map <- predict(maxent_best_mod, data = maxent_pred_stack,
+                      type = "cloglog",
+                      clamp = TRUE)
+
+# plot results
+plotROC(maxent_best_mod, test = maxent_test_obj)
+
+tm_shape(maxent_map) +
+  tm_raster(midpoint = 0) +
+  tm_shape(points) +
+  tm_dots(size = 0.1) +
+  tm_layout(legend.position = c(1, 0.2))
 
 ```
 
 ## Extract Values
 
 ```{r}
+# extract absence values (bg coords)
+abs_points <- maxent_bg_coords %>% 
+  st_as_sf(coords = c("x", "y"), crs = "WSG84")
+  # vect(geom = c("x", "y"), crs = "WSG84")
 
+# extract values for presence points
+pres_points <- points %>% 
+  select(latitude, longitude)
+
+tm_shape(abs_points) +
+  tm_dots(col = "lightblue", size = 0.1) +
+  tm_shape(pres_points) +
+  tm_dots(col = "navy", shape = 17, size = 0.15)
 ```
+
+
+```{r, eval=FALSE}
+### FOR BRT ### 
+
+# extract absence prediction values
+abs_points <- pres_abs_points %>% 
+  filter(basp_pa == 0) %>% 
+  select(longitude, latitude) %>% 
+  vect(geom=c("longitude", "latitude"), crs="WSG84")
+
+abs_predicted <- extract(brt_map, abs_points, xy = TRUE, ID = FALSE) %>% 
+  mutate(basp_pa = 0) %>% 
+  rename(prediction = lyr1)
+
+# extract presence prediction values
+pres_points <- pres_abs_points %>% 
+  filter(basp_pa == 1) %>% 
+  select(longitude, latitude) %>% 
+  vect(geom=c("longitude", "latitude"), crs="WSG84")
+
+pres_predicted <- extract(brt_map, pres_points, xy = TRUE, ID = FALSE) %>% 
+  mutate(basp_pa = 1) %>% 
+  rename(prediction = lyr1)
+
+
+# combine
+abs_predicted %>% 
+  rbind(pres_predicted) %>% 
+  mutate(model = "BRT reduced")
+```
+
 

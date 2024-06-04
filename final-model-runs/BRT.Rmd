@@ -24,21 +24,9 @@ library(SDMtune)
 library(rsample)
 library(rJava)
 
-# set data directory
-rast_dir <- here("data", "raster-stacks")
-point_dir <- here("data", "CampRoberts_spatial_data")
-
 # source functions
 source(here("R", "sdmtune-brt-final-function.R"))
 
-# # occurrence points
-# points <- read_sf(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
-#   clean_names() %>% 
-#   filter(plot == 1)
-# 
-# pres_abs_points <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
-#   clean_names() %>% 
-#   filter(plot == 1)
 ```
 
 ## Plot Summary
@@ -56,38 +44,224 @@ Each plot indicates a different transect where cover board surveys were conducte
 | 7           | 10\*                 |
 | 8           | 21                   |
 
-## Test BRT Function
+
+## All Variables - Iterate Through Plots 1-8
+
+```{r, eval=FALSE}
+
+# set data directory
+rast_dir <- here("data", "raster-stacks", "full-stack")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
+# create empty df
+brt_all_predictions <- data.frame()
+
+
+# run BRT for all 8 plots (all & reduced variables)
+for (i in seq(1:2)) {
+  
+  # .............run both BRT models.............
+  brt_res <- tune_brt(plot_number = i,
+                      point_dir = point_dir,
+                      rast_dir = rast_dir,
+                      reduced_only = FALSE)
+  
+  # ..............store key results...............
+  brt_p_coords <- brt_res[["p_coords"]]
+  brt_a_coords <- brt_res[["a_coords"]]
+  brt_pred_stack <- brt_res[["brt_pred_stack"]]
+  brt_gs_full <- brt_res[["brt_gs_full"]]
+  brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
+  
+  
+  # ..............select best model...............
+  brt_id_full <- which.max(brt_gs_full@results$test_AUC)
+  brt_best_mod_full <- combineCV(brt_gs_full@models[[brt_id_full]])
+  
+  brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
+  brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
+  
+  # .............generate predictions.............
+  brt_map_full <- predict(brt_best_mod_full, data = brt_pred_stack)
+  brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
+  
+  rm(brt_res, brt_id_full, brt_best_mod_full, brt_id_reduced, brt_best_mod_reduced)
+  
+  
+  # ...........vectorize coordinates .........
+  brt_p_coords <- brt_p_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
+  brt_a_coords <- brt_a_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
+  
+  
+  # ........isolate full predictions.........
+  pres_prediction_full <- extract(brt_map_full, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 1,
+           variables = "all")
+  
+  abs_prediction_full <- extract(brt_map_full, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 0,
+           variables = "all")
+  
+  
+  # .......isolate reduced predictions......
+  pres_prediction_reduced <- extract(brt_map_reduced, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 1,
+           variables = "reduced")
+  
+  abs_prediction_reduced <- extract(brt_map_reduced, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 0,
+           variables = "all")
+  
+  rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_full)
+  
+  # ............combine results..........
+  combined_predictions <- rbind(pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced) %>% 
+    mutate(plot = i)
+  
+  brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
+  
+  rm(combined_predictions, pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced)
+  
+} # END for-loop
+
+
+```
+
+## Select Variables - Iterate Through Plot 1-8
+
 ```{r}
+# re-write data directory
+rast_dir <- here("data", "raster-stacks", "full-stack")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
+# create empty df
+brt_all_predictions <- data.frame()
+
+
+# run BRT for all 8 plots (all & reduced variables)
+for (i in seq(1:2)) {
+  
+  # .............run both BRT models.............
+  brt_res <- tune_brt(plot_number = i,
+                      point_dir = point_dir,
+                      rast_dir = rast_dir,
+                      reduced_only = FALSE)
+  
+  # ..............store key results...............
+  brt_p_coords <- brt_res[["p_coords"]]
+  brt_a_coords <- brt_res[["a_coords"]]
+  brt_pred_stack <- brt_res[["brt_pred_stack"]]
+  brt_gs_full <- brt_res[["brt_gs_full"]]
+  brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
+  
+  
+  # ..............select best model...............
+  brt_id_full <- which.max(brt_gs_full@results$test_AUC)
+  brt_best_mod_full <- combineCV(brt_gs_full@models[[brt_id_full]])
+  
+  brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
+  brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
+  
+  # .............generate predictions.............
+  brt_map_full <- predict(brt_best_mod_full, data = brt_pred_stack)
+  brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
+  
+  rm(brt_res, brt_id_full, brt_best_mod_full, brt_id_reduced, brt_best_mod_reduced)
+  
+  
+  # ...........vectorize coordinates .........
+  brt_p_coords <- brt_p_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
+  brt_a_coords <- brt_a_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
+  
+  
+  # ........isolate full predictions.........
+  pres_prediction_full <- extract(brt_map_full, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 1,
+           variables = "all")
+  
+  abs_prediction_full <- extract(brt_map_full, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 0,
+           variables = "all")
+  
+  
+  # .......isolate reduced predictions......
+  pres_prediction_reduced <- extract(brt_map_reduced, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 1,
+           variables = "reduced")
+  
+  abs_prediction_reduced <- extract(brt_map_reduced, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
+    rename(prediction = lyr1) %>% 
+    mutate(pres_abs = 0,
+           variables = "all")
+  
+  rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_full)
+  
+  # ............combine results..........
+  combined_predictions <- rbind(pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced) %>% 
+    mutate(plot = i)
+  
+  brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
+  
+  rm(combined_predictions, pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced)
+  
+} # END for-loop
+
+```
+
+
+
+
+
+
+------------------------
+#        END !!
+------------------------ 
+
+## Test BRT Function
+```{r, eval=FALSE}
 # run model
 brt_res <- tune_brt(plot_number = 1,
                     point_dir = point_dir,
                     rast_dir = rast_dir,
-                    k_folds = 3)
+                    reduced_only = FALSE)
 
 # pull models from results
+brt_p_coords <- brt_res[["p_coords"]]
 brt_test_obj <- brt_res[["brt_test"]]
 brt_pred_stack <- brt_res[["brt_pred_stack"]]
-brt_gs <- brt_res[["brt_gs"]]
-brt_full_model <- brt_res[["brt_model"]]
-brt_reduced_model <- brt_res[["brt_mod_reduced"]]
+brt_gs_full <- brt_res[["brt_gs_full"]]
+brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
 
-# isolate the top performing model & predict
-brt_id <- which.max(brt_gs@results$test_AUC)
-brt_best_mod <- combineCV(brt_gs@models[[brt_id]])
-brt_map <- predict(brt_best_mod, data = brt_pred_stack)
+# best model predictions for FULL model 
+brt_id_full <- which.max(brt_gs_full@results$test_AUC)
+brt_best_mod_full <- combineCV(brt_gs_full@models[[brt_id_full]])
+brt_map_full <- predict(brt_best_mod_full, data = brt_pred_stack)
 
-# plot results
-plotROC(brt_best_mod, test = brt_test_obj)
+# best modl predictions for REDUCED model
+brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
+brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
+brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
 
-tm_shape(brt_map) +
-  tm_raster(midpoint = 0) +
-  tm_shape(points) +
-  tm_dots(size = 0.1) +
-  tm_layout(legend.position = c(1, 0.2))
+# plot ROC results
+plotROC(brt_best_mod_full, test = brt_test_obj) + labs(title = "All Environmental Variables")
+plotROC(brt_best_mod_reduced, test = brt_test_obj) + labs(title = "Reduced Environmental Variables")
+
+# tm_shape(brt_map) +
+#   tm_raster(midpoint = 0) +
+#   tm_shape(points) +
+#   tm_dots(size = 0.1) +
+#   tm_layout(legend.position = c(1, 0.2))
 ```
 
 ## Extract Values
-```{r}
+```{r, eval=FALSE}
 # extract absence prediction values
 abs_points <- pres_abs_points %>% 
   filter(basp_pa == 0) %>% 
@@ -108,56 +282,10 @@ pres_predicted <- extract(brt_map, pres_points, xy = TRUE, ID = FALSE) %>%
   mutate(basp_pa = 1) %>% 
   rename(prediction = lyr1)
 
-
 # combine
 abs_predicted %>% 
   rbind(pres_predicted) %>% 
   mutate(model = "BRT reduced")
 
 ```
-
-## Iterate through All Plots
-
-```{r, eval=FALSE}
-rm(list = ls())
-
-brt_all_predictions <- data.frame()
-
-for (i in seq(1:8)) {
-  
-  # read in point data
-  points <- read_sf(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
-    clean_names() %>% 
-    filter(plot == i)
-  
-  pres_abs_points <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
-    clean_names() %>% 
-    filter(plot == i)
-  
-  # run tuned model
-  brt_res <- tune_brt(plot_number = i,
-                      point_dir = point_dir,
-                      rast_dir = rast_dir,
-                      k_folds = 3)
-  
-  # retrieve results
-  brt_test_obj <- brt_res[["brt_test"]]
-  brt_pred_stack <- brt_res[["brt_pred_stack"]]
-  brt_gs <- brt_res[["brt_gs"]]
-  brt_full_model <- brt_res[["brt_model"]]
-  brt_reduced_model <- brt_res[["brt_mod_reduced"]]
-  
-  # make predictions
-  brt_all_id <- which.max()
-  
-  brt_id <- which.max(brt_gs@results$test_AUC)
-  brt_best_mod <- combineCV(brt_gs@models[[brt_id]])
-  brt_map <- predict(brt_best_mod, data = brt_pred_stack)
-  
-  # clean prediction data
-  
-  # extract prediction values
-}
-```
-
 
