@@ -12,8 +12,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##              Load Data              ----
   ## ========================================
-  # # store plot as character string
-  # plot_name <- paste0("plot", plot_number)
+  print(paste0("Load Data"))
   
   # load occurrence points
   occurrences <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
@@ -24,29 +23,11 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   pred_stack_name <- paste0("predictor_stack_rast_p", plot_number, ".tif")
   brt_pred_stack <- rast(here(rast_dir, pred_stack_name))
   
-  # # list all environmental raster names
-  # env_layer_names <- c("ba_dn", "br_ht","dnd_db", "dnd_st", "elev", "gs_dn", 
-  #                      "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
-  #                      "dnd_stc", "fb_dn", "hli", "rk_dn")
-  # 
-  # # load environmental rasters
-  # for (i in env_layer_names) {
-  #   layer <- rast(here(rast_dir, i, plot_name, paste0(i, ".asc")))
-  #   assign(x = paste0(i), layer, envir = .GlobalEnv)
-  # }
-  # 
-  # # create full predictor stack
-  # brt_pred_stack <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
-  #                     slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
-  #                     fb_dn, hli, rk_dn)
-  # 
-  # # remove individual rasters
-  # rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-  #    dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db, envir = .GlobalEnv)
-  
   ## ========================================
   ##        Occurrence Data Preparation  ----
   ## ========================================
+  print(paste0("Occurrence Data Preparation"))
+  
   # split presence and absence points
   p_coords <- occurrences %>% 
     filter(basp_pa == 1) %>% 
@@ -63,6 +44,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##           Model Pre-Processing      ----
   ## ========================================
+  print(paste0("Model Pre-Processing"))
+  
   # create SWD object using data
   swd_obj <- prepareSWD(species = "Black-Bellied Slender Salamander",
                         p = p_coords,
@@ -86,6 +69,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##          Define Model & Variables   ----
   ## ========================================
+  print(paste0("Define Model & Variables"))
+  
   # define model
   brt_model <- train(method = "BRT", 
                      progress = FALSE,
@@ -101,6 +86,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
     bag.fraction = seq(0.5, 0.75, 0.05)
   )
   
+  print(paste0("Reduce Variables"))
   # remove variables with importance less than 2% IF it doesn't decrease model performance
   brt_mod_reduced <- reduceVar(brt_model,
                                interactive = FALSE,
@@ -113,6 +99,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##          Tune Hyperparameters       ----
   ## ========================================
+  print(paste0("Tune Hyperparameters"))
+  
   # test possible combinations with gridSearch
   brt_gs <- gridSearch(brt_mod_reduced, 
                        interactive = FALSE,

@@ -1,0 +1,89 @@
+---
+title: "Final Run of All Plots"
+author: "Briana Barajas"
+date: 2024-05-08
+---
+
+## Preparation
+
+```{r}
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+```
+
+```{r}
+rm(list = ls())
+
+# set data directory
+rast_dir <- here("data", "raster-stacks")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
+# source functions
+source(here("R", "sdmtune-maxent-final-function.R"))
+
+# occurrence points
+points <- read_sf(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
+  clean_names() %>% 
+  filter(plot == 1)
+```
+
+
+## Plot Summary
+
+Each plot indicates a different transect where cover board surveys were conducted, and contains it's own unique values of occurrence points. The maximum entropy model is often noted for it's capabilities even when given a small data set. Since each plot has a unique number of occurrence points, some of the analyses conducted compare plots with low vs. high numbers of points to see how the AUC was affected.
+
+| Plot Number | Number of Occurrences |
+|-------------|----------------------|
+| 1           | 51                   |
+| 2           | 57                   |
+| 3           | 78\*                 |
+| 4           | 19                   |
+| 5           | 72                   |
+| 6           | 39                   |
+| 7           | 10\*                 |
+| 8           | 21                   |
+
+## Test MaxEnt Function
+```{r}
+# run model
+maxent_res <- tune_maxent(plot_number = 1,
+                          point_dir = point_dir,
+                          rast_dir = rast_dir,
+                          k_folds = 3)
+
+# pull models from results
+maxent_test_obj <- maxent_res[["maxent_test"]]
+maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
+maxent_gs <- maxent_res[["maxent_gs"]]
+maxent_full_model <- maxent_res[["maxent_model"]]
+maxent_reduced_model <- maxent_res[["maxent_mod_reduced"]]
+
+# isolate the top performing model & predict
+maxent_id <- which.max(maxent_gs@results$test_AUC)
+maxent_best_mod <- combineCV(maxent_gs@models[[maxent_id]])
+maxent_map <- predict(maxent_best_mod, data = maxent_pred_stack,
+                      type = "cloglog",
+                      clamp = TRUE)
+
+# plot results
+plotROC(maxent_best_mod, test = maxent_test_obj)
+
+tm_shape(maxent_map) +
+  tm_raster(midpoint = 0) +
+  tm_shape(points) +
+  tm_dots(size = 0.1) +
+  tm_layout(legend.position = c(1, 0.2))
+
+```

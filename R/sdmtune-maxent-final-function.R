@@ -12,10 +12,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##              Load Data              ----
   ## ========================================
-  print(paste0(" Load Data"))
-  
-  # store plot as character
-  plot_name <- paste0("plot", plot_number)
+  print(paste0("Load Data"))
   
   # load occurrence points
   occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
@@ -23,25 +20,9 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds){
     clean_names() %>% 
     filter(plot == plot_number)
   
-  # list all environmental raster names
-  env_layer_names <- c("ba_dn", "br_ht","dnd_db", "dnd_st", "elev", "gs_dn", 
-                       "li_dn", "slope", "br_dn", "canopy","dnd_dn", 
-                       "dnd_stc", "fb_dn", "hli", "rk_dn")
-  
-  # load environmental rasters
-  for (i in env_layer_names) {
-    layer <- rast(here(rast_dir, i, plot_name, paste0(i, ".asc")))
-    assign(x = paste0(i), layer, envir = .GlobalEnv)
-  }
-  
-  # create full predictor stack
-  maxent_pred_stack <- c(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn,
-                            slope, br_dn, canopy, dnd_dn, dnd_stc, dnd_db,
-                            fb_dn, hli, rk_dn)
-  
-  # remove individual rasters
-  rm(ba_dn, br_ht, dnd_st, elev, gs_dn, li_dn, slope, br_dn, canopy, dnd_dn, 
-        dnd_stc, fb_dn, hli, rk_dn, layer, dnd_db, envir = .GlobalEnv)
+  # read in predictor stack
+  pred_stack_name <- paste0("predictor_stack_rast_p", plot_number, ".tif")
+  maxent_pred_stack <- rast(here(rast_dir, pred_stack_name))
   
   ## ========================================
   ##        Occurrence Data Preparation  ----
@@ -108,6 +89,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds){
     reg = seq(0.1, 3, 0.1),
     fc = c("lq", "lh", "lqp", "lqph", "lqpht"))
   
+  print(paste0("Reduce Variables"))
   # remove variables with importance less than 2% IF it doesn't decrease model performance
   maxent_mod_reduced <- reduceVar(maxent_model,
                                   interactive = FALSE,
@@ -124,26 +106,21 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds){
   
   # test possible combinations with gridSearch
   maxent_gs <- gridSearch(maxent_mod_reduced,
-                   interactive = FALSE,
-                   progress = FALSE,
-                   hypers = param_tune, 
-                   metric = "auc", 
-                   test = maxent_test)
+                          interactive = FALSE,
+                          progress = FALSE,
+                          hypers = param_tune, 
+                          metric = "auc", 
+                          test = maxent_test)
   
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  res <- list(maxent_test, 
-              # maxent_pred_stack, 
-              maxent_gs, maxent_model, maxent_mod_reduced)
-  names(res) <- list("maxent_test", 
-                     # "maxent_pred_stack", 
-                     "maxent_gs", "maxent_model", "maxent_mod_reduced")
-
+  res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_model, maxent_mod_reduced)
+  names(res) <- list("maxent_test", "maxent_pred_stack", "maxent_gs", "maxent_model", "maxent_mod_reduced")
+  
   return(res)
-
+  
 }
-
 
 
 

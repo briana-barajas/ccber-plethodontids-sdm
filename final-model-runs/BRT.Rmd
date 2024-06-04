@@ -1,0 +1,163 @@
+---
+title: "Boosted Regression Tree"
+author: "Briana Barajas"
+date: 2024-06-03
+---
+
+## Preparation
+
+```{r}
+rm(list = ls())
+
+# wrangling
+library(tidyverse)
+library(here)
+library(janitor)
+
+# raster/geospatial
+library(sf)
+library(tmap)
+library(terra)
+
+# modeling
+library(SDMtune)
+library(rsample)
+library(rJava)
+
+# set data directory
+rast_dir <- here("data", "raster-stacks")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
+# source functions
+source(here("R", "sdmtune-brt-final-function.R"))
+
+# # occurrence points
+# points <- read_sf(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
+#   clean_names() %>% 
+#   filter(plot == 1)
+# 
+# pres_abs_points <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
+#   clean_names() %>% 
+#   filter(plot == 1)
+```
+
+## Plot Summary
+
+Each plot indicates a different transect where cover board surveys were conducted, and contains it's own unique values of occurrence points. The maximum entropy model is often noted for it's capabilities even when given a small data set. Since each plot has a unique number of occurrence points, some of the analyses conducted compare plots with low vs. high numbers of points to see how the AUC was affected.
+
+| Plot Number | Number of Occurrences |
+|-------------|----------------------|
+| 1           | 51                   |
+| 2           | 57                   |
+| 3           | 78\*                 |
+| 4           | 19                   |
+| 5           | 72                   |
+| 6           | 39                   |
+| 7           | 10\*                 |
+| 8           | 21                   |
+
+## Test BRT Function
+```{r}
+# run model
+brt_res <- tune_brt(plot_number = 1,
+                    point_dir = point_dir,
+                    rast_dir = rast_dir,
+                    k_folds = 3)
+
+# pull models from results
+brt_test_obj <- brt_res[["brt_test"]]
+brt_pred_stack <- brt_res[["brt_pred_stack"]]
+brt_gs <- brt_res[["brt_gs"]]
+brt_full_model <- brt_res[["brt_model"]]
+brt_reduced_model <- brt_res[["brt_mod_reduced"]]
+
+# isolate the top performing model & predict
+brt_id <- which.max(brt_gs@results$test_AUC)
+brt_best_mod <- combineCV(brt_gs@models[[brt_id]])
+brt_map <- predict(brt_best_mod, data = brt_pred_stack)
+
+# plot results
+plotROC(brt_best_mod, test = brt_test_obj)
+
+tm_shape(brt_map) +
+  tm_raster(midpoint = 0) +
+  tm_shape(points) +
+  tm_dots(size = 0.1) +
+  tm_layout(legend.position = c(1, 0.2))
+```
+
+## Extract Values
+```{r}
+# extract absence prediction values
+abs_points <- pres_abs_points %>% 
+  filter(basp_pa == 0) %>% 
+  select(longitude, latitude) %>% 
+  vect(geom=c("longitude", "latitude"), crs="WSG84")
+
+abs_predicted <- extract(brt_map, abs_points, xy = TRUE, ID = FALSE) %>% 
+  mutate(basp_pa = 0) %>% 
+  rename(prediction = lyr1)
+
+# extract presence prediction values
+pres_points <- pres_abs_points %>% 
+  filter(basp_pa == 1) %>% 
+  select(longitude, latitude) %>% 
+  vect(geom=c("longitude", "latitude"), crs="WSG84")
+
+pres_predicted <- extract(brt_map, pres_points, xy = TRUE, ID = FALSE) %>% 
+  mutate(basp_pa = 1) %>% 
+  rename(prediction = lyr1)
+  
+  
+# combine
+abs_predicted %>% 
+  rbind(pres_predicted) %>% 
+  mutate(model = "BRT reduced")
+
+```
+
+## Iterate through All Plots
+
+```{r, eval=FALSE}
+rm(list = ls())
+
+brt_all_predictions <- data.frame()
+
+for (i in seq(1:8)) {
+  
+  # read in point data
+  points <- read_sf(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
+    clean_names() %>% 
+    filter(plot == i)
+  
+  pres_abs_points <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
+    clean_names() %>% 
+    filter(plot == i)
+  
+  # run tuned model
+  brt_res <- tune_brt(plot_number = i,
+                    point_dir = point_dir,
+                    rast_dir = rast_dir,
+                    k_folds = 3)
+  
+  # retrieve results
+  brt_test_obj <- brt_res[["brt_test"]]
+  brt_pred_stack <- brt_res[["brt_pred_stack"]]
+  brt_gs <- brt_res[["brt_gs"]]
+  brt_full_model <- brt_res[["brt_model"]]
+  brt_reduced_model <- brt_res[["brt_mod_reduced"]]
+  
+  # make predictions
+  brt_all_id <- which.max()
+  
+  brt_id <- which.max(brt_gs@results$test_AUC)
+brt_best_mod <- combineCV(brt_gs@models[[brt_id]])
+brt_map <- predict(brt_best_mod, data = brt_pred_stack)
+  
+  # clean prediction data
+  
+  # extract prediction values
+}
+```
+
+
