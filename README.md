@@ -2,8 +2,7 @@
 
 Independent research project, creating and assessing species distribution models for the Black-bellied Slender Salamander (*Batrachoseps nigriventris*). The goal is to assess the performance of species distribution models given high-resolution raster data over a small spatial scale (6-hectare plots).
 
-![](http://url/to/img.png](https://californiaherps.com/salamanders/images/bnigriventrisss05.jpg))
-
+![](https://californiaherps.com/salamanders/images/bnigriventrisss05.jpg)
 
 ## Progress
 **Completed** 
