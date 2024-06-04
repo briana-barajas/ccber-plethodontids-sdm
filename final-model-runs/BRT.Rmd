@@ -107,8 +107,8 @@ pres_points <- pres_abs_points %>%
 pres_predicted <- extract(brt_map, pres_points, xy = TRUE, ID = FALSE) %>% 
   mutate(basp_pa = 1) %>% 
   rename(prediction = lyr1)
-  
-  
+
+
 # combine
 abs_predicted %>% 
   rbind(pres_predicted) %>% 
@@ -136,9 +136,9 @@ for (i in seq(1:8)) {
   
   # run tuned model
   brt_res <- tune_brt(plot_number = i,
-                    point_dir = point_dir,
-                    rast_dir = rast_dir,
-                    k_folds = 3)
+                      point_dir = point_dir,
+                      rast_dir = rast_dir,
+                      k_folds = 3)
   
   # retrieve results
   brt_test_obj <- brt_res[["brt_test"]]
@@ -151,8 +151,8 @@ for (i in seq(1:8)) {
   brt_all_id <- which.max()
   
   brt_id <- which.max(brt_gs@results$test_AUC)
-brt_best_mod <- combineCV(brt_gs@models[[brt_id]])
-brt_map <- predict(brt_best_mod, data = brt_pred_stack)
+  brt_best_mod <- combineCV(brt_gs@models[[brt_id]])
+  brt_map <- predict(brt_best_mod, data = brt_pred_stack)
   
   # clean prediction data
   

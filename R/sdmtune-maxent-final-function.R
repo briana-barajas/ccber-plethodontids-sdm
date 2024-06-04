@@ -115,8 +115,11 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, k_folds){
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_model, maxent_mod_reduced)
-  names(res) <- list("maxent_test", "maxent_pred_stack", "maxent_gs", "maxent_model", "maxent_mod_reduced")
+  res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_mod_reduced, bg_coords)
+  names(res) <- list("maxent_test", "maxent_pred_stack", "maxent_gs", "maxent_mod_reduced", "bg_coords")
+  
+  # res <- list(maxent_test, maxent_pred_stack, maxent_gs, maxent_model, maxent_mod_reduced)
+  # names(res) <- list("maxent_test", "maxent_pred_stack", "maxent_gs", "maxent_model", "maxent_mod_reduced")
   
   return(res)
   

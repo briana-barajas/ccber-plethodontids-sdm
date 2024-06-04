@@ -63,27 +63,34 @@ maxent_res <- tune_maxent(plot_number = 1,
                           rast_dir = rast_dir,
                           k_folds = 3)
 
-# pull models from results
-maxent_test_obj <- maxent_res[["maxent_test"]]
-maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
-maxent_gs <- maxent_res[["maxent_gs"]]
-maxent_full_model <- maxent_res[["maxent_model"]]
-maxent_reduced_model <- maxent_res[["maxent_mod_reduced"]]
-
-# isolate the top performing model & predict
-maxent_id <- which.max(maxent_gs@results$test_AUC)
-maxent_best_mod <- combineCV(maxent_gs@models[[maxent_id]])
-maxent_map <- predict(maxent_best_mod, data = maxent_pred_stack,
-                      type = "cloglog",
-                      clamp = TRUE)
-
-# plot results
-plotROC(maxent_best_mod, test = maxent_test_obj)
-
-tm_shape(maxent_map) +
-  tm_raster(midpoint = 0) +
-  tm_shape(points) +
-  tm_dots(size = 0.1) +
-  tm_layout(legend.position = c(1, 0.2))
+# # pull models from results
+# maxent_test_obj <- maxent_res[["maxent_test"]]
+# maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
+# maxent_gs <- maxent_res[["maxent_gs"]]
+# maxent_full_model <- maxent_res[["maxent_model"]]
+# maxent_reduced_model <- maxent_res[["maxent_mod_reduced"]]
+# 
+# # isolate the top performing model & predict
+# maxent_id <- which.max(maxent_gs@results$test_AUC)
+# maxent_best_mod <- combineCV(maxent_gs@models[[maxent_id]])
+# maxent_map <- predict(maxent_best_mod, data = maxent_pred_stack,
+#                       type = "cloglog",
+#                       clamp = TRUE)
+# 
+# # plot results
+# plotROC(maxent_best_mod, test = maxent_test_obj)
+# 
+# tm_shape(maxent_map) +
+#   tm_raster(midpoint = 0) +
+#   tm_shape(points) +
+#   tm_dots(size = 0.1) +
+#   tm_layout(legend.position = c(1, 0.2))
 
 ```
+
+## Extract Values
+
+```{r}
+
+```
+
