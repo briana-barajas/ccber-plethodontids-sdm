@@ -3,11 +3,11 @@
 #' @param plot_number Numeric plot number
 #' @param point_dir File path for occurrence point data
 #' @param rast_dir File path for environmental variables
-#' @param reduced_only Run grid search for reduced model only, default TRUE
+#' @param include_variables Model with "all", or "reduced" environmental variables, default is "both"
 #'
 #' @return Grid search results, initial BRT model, reduced variable BRT model, and test data
 #'
-tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
+tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both"){
   
   ## ========================================
   ##              Load Data              ----
@@ -15,7 +15,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
   print(paste0("Load Data"))
   
   # load occurrence points
-  occurrences <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv")) %>% 
+  occurrences <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv"), show_col_types = FALSE) %>% 
     clean_names() %>% 
     filter(plot == plot_number)
   
@@ -86,47 +86,10 @@ tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
   
   
   ## ========================================
-  ##    Tune Hyperparameters (REDUCE ONLY) ----
+  ##    Tune Hyperparameters (BOTH)      ----
   ## ========================================
   
-  
-  if(reduced_only == TRUE){
-    
-    # ..............reduce variables.............
-    
-    print(paste0("Reduce Variables"))
-    
-    brt_model <- reduceVar(brt_model,
-                           interactive = FALSE,
-                           verbose = FALSE,
-                           th = 2,
-                           metric = "auc",
-                           test = brt_test,
-                           use_jk = TRUE)
-    
-    # ..............grid search.............
-    
-    print(paste0("Tune Hyperparameters"))
-    
-    brt_gs <- gridSearch(brt_model, 
-                         interactive = FALSE,
-                         progress = FALSE,
-                         hypers = param_tune, 
-                         metric = "auc", 
-                         test = brt_test)
-    
-    
-    # ...............return results...............
-    
-    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs)
-    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs")
-    
-    
-    ## ========================================
-    ##       Tune Hyperparameters (BOTH)  ----
-    ## ========================================
-    
-  } else{
+  if(include_variables %in% c("BOTH", "both", "Both")){
     
     # ..............reduce variables.............
     print(paste0("Reduce Variables"))
@@ -140,6 +103,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
                                  use_jk = TRUE)
     
     # ..............grid search.............
+    print(paste0("Grid Search - Full Model"))
     brt_gs_full <- gridSearch(brt_model, 
                               interactive = FALSE,
                               progress = FALSE,
@@ -147,6 +111,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
                               metric = "auc", 
                               test = brt_test)
     
+    print(paste0("Grid Search - Reduced Model"))
     brt_gs_reduced <- gridSearch(brt_mod_reduced, 
                                  interactive = FALSE,
                                  progress = FALSE,
@@ -158,7 +123,66 @@ tune_brt <- function(plot_number, point_dir, rast_dir, reduced_only = TRUE){
     res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_full, brt_gs_reduced)
     names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_full", "brt_gs_reduced")
     
-  } # END if-else, only_reduced = FALSE
+    
+    ## ========================================
+    ##    Tune Hyperparameters (REDUCED)   ----
+    ## ========================================
+    
+  } else if (include_variables %in% c("REDUCED", "reduced", "Reduced")){
+    
+    # ..............reduce variables.............
+    print(paste0("Reduce Variables"))
+    
+    brt_mod_reduced <- reduceVar(brt_model,
+                                 interactive = FALSE,
+                                 verbose = FALSE,
+                                 th = 2,
+                                 metric = "auc",
+                                 test = brt_test,
+                                 use_jk = TRUE)
+    
+    # ..............grid search.............
+    print(paste0("Grid Search - Reduced Model"))
+    brt_gs_reduced <- gridSearch(brt_mod_reduced, 
+                                 interactive = FALSE,
+                                 progress = FALSE,
+                                 hypers = param_tune, 
+                                 metric = "auc", 
+                                 test = brt_test)
+    
+    # ...............return results...............
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_reduced)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_reduced")
+    
+    
+    ## ========================================
+    ##    Tune Hyperparameters (ALL VARS)  ----
+    ## ========================================
+    
+  } else if (include_variables %in% c("ALL", "all", "All")){
+    
+    # ..............grid search.............
+    print(paste0("Grid Search - Full Model"))
+    brt_gs_full <- gridSearch(brt_model, 
+                              interactive = FALSE,
+                              progress = FALSE,
+                              hypers = param_tune, 
+                              metric = "auc", 
+                              test = brt_test)
+    
+    # ...............return results...............
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_full)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_full")
+    
+    
+    
+    ## ========================================
+    ##    Tune Hyperparameters (ERROR) ----
+    ## ========================================  
+    
+  } else {
+    stop(paste0("Enter FULL, BOTH, or REDUCED"))
+  } # END if-else statement 
   
   
   ## ========================================

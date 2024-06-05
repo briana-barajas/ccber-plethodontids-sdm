@@ -64,7 +64,7 @@ for (i in seq(1:2)) {
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
-                      reduced_only = FALSE)
+                      = FALSE)
   
   # ..............store key results...............
   brt_p_coords <- brt_res[["p_coords"]]
@@ -226,11 +226,15 @@ for (i in seq(1:2)) {
 
 ## Test BRT Function
 ```{r, eval=FALSE}
+# re-write data directory
+rast_dir <- here("data", "raster-stacks", "full-stack")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
 # run model
 brt_res <- tune_brt(plot_number = 1,
                     point_dir = point_dir,
                     rast_dir = rast_dir,
-                    reduced_only = FALSE)
+                    include_variables = "all")
 
 # pull models from results
 brt_p_coords <- brt_res[["p_coords"]]
