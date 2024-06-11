@@ -60,7 +60,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   brt_test <- split[[2]]
   
   # prepare cross validation folds
-  #k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
+  #k_max <- round(nrow(distinct(p_coords, x, y)) * 0.8)
   
   cv_folds <- randomFolds(train, k = 3, only_presence = FALSE)
   
@@ -86,7 +86,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   
   
   ## ========================================
-  ##    Tune Hyperparameters (BOTH)      ----
+  ##    Tune Hyper parameters (BOTH)     ----
   ## ========================================
   
   if(include_variables %in% c("BOTH", "both", "Both")){
@@ -103,15 +103,15 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  use_jk = TRUE)
     
     # ..............grid search.............
-    print(paste0("Grid Search - Full Model"))
-    brt_gs_full <- gridSearch(brt_model, 
-                              interactive = FALSE,
-                              progress = FALSE,
-                              hypers = param_tune, 
-                              metric = "auc", 
-                              test = brt_test)
+    print(paste0("Grid Search - All Variables"))
+    brt_gs_all <- gridSearch(brt_model, 
+                             interactive = FALSE,
+                             progress = FALSE,
+                             hypers = param_tune, 
+                             metric = "auc", 
+                             test = brt_test)
     
-    print(paste0("Grid Search - Reduced Model"))
+    print(paste0("Grid Search - Reduced Variables"))
     brt_gs_reduced <- gridSearch(brt_mod_reduced, 
                                  interactive = FALSE,
                                  progress = FALSE,
@@ -120,8 +120,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  test = brt_test)
     
     # ...............return results...............
-    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_full, brt_gs_reduced)
-    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_full", "brt_gs_reduced")
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_all, brt_gs_reduced)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_all", "brt_gs_reduced")
     
     
     ## ========================================
@@ -142,7 +142,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  use_jk = TRUE)
     
     # ..............grid search.............
-    print(paste0("Grid Search - Reduced Model"))
+    print(paste0("Grid Search - Reduced Variables"))
     brt_gs_reduced <- gridSearch(brt_mod_reduced, 
                                  interactive = FALSE,
                                  progress = FALSE,
@@ -162,17 +162,17 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   } else if (include_variables %in% c("ALL", "all", "All")){
     
     # ..............grid search.............
-    print(paste0("Grid Search - Full Model"))
-    brt_gs_full <- gridSearch(brt_model, 
-                              interactive = FALSE,
-                              progress = FALSE,
-                              hypers = param_tune, 
-                              metric = "auc", 
-                              test = brt_test)
+    print(paste0("Grid Search - All Variables"))
+    brt_gs_all <- gridSearch(brt_model, 
+                             interactive = FALSE,
+                             progress = FALSE,
+                             hypers = param_tune, 
+                             metric = "auc", 
+                             test = brt_test)
     
     # ...............return results...............
-    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_full)
-    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_full")
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_all)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_all")
     
     
     
@@ -181,17 +181,13 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
     ## ========================================  
     
   } else {
-    stop(paste0("Enter FULL, BOTH, or REDUCED"))
+    stop(paste0("Must set include_variables to All, Both, or Reduced"))
   } # END if-else statement 
   
   
   ## ========================================
   ##             Return Results          ----
   ## ========================================
-  
-  # # return list of results needed for predictions
-  # res <- list(brt_test, brt_pred_stack, brt_gs, brt_model, brt_mod_reduced)
-  # names(res) <- list("brt_test", "brt_pred_stack", "brt_gs", "brt_model", "brt_mod_reduced")
   
   return(res)
   
