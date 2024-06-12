@@ -25,7 +25,7 @@ library(rsample)
 library(rJava)
 
 # source functions
-source(here("R", "sdmtune-brt-final-function.R"))
+source(here("R", "sdmtune-brt-function.R"))
 
 ```
 
@@ -64,69 +64,69 @@ for (i in seq(1:2)) {
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
-                      = FALSE)
+                      include_variables = "both")
   
   # ..............store key results...............
   brt_p_coords <- brt_res[["p_coords"]]
   brt_a_coords <- brt_res[["a_coords"]]
   brt_pred_stack <- brt_res[["brt_pred_stack"]]
-  brt_gs_full <- brt_res[["brt_gs_full"]]
+  brt_gs_all <- brt_res[["brt_gs_all"]]
   brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
-  
-  
+
+
   # ..............select best model...............
-  brt_id_full <- which.max(brt_gs_full@results$test_AUC)
-  brt_best_mod_full <- combineCV(brt_gs_full@models[[brt_id_full]])
-  
+  brt_id_all <- which.max(brt_gs_all@results$test_AUC)
+  brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
+
   brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
   brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
-  
+
   # .............generate predictions.............
-  brt_map_full <- predict(brt_best_mod_full, data = brt_pred_stack)
+  brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
   brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
-  
-  rm(brt_res, brt_id_full, brt_best_mod_full, brt_id_reduced, brt_best_mod_reduced)
-  
-  
+
+  rm(brt_res, brt_id_all, brt_best_mod_all, brt_id_reduced, brt_best_mod_reduced)
+
+
   # ...........vectorize coordinates .........
   brt_p_coords <- brt_p_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
   brt_a_coords <- brt_a_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
-  
-  
-  # ........isolate full predictions.........
-  pres_prediction_full <- extract(brt_map_full, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
-    rename(prediction = lyr1) %>% 
+
+
+  # ........isolate all predictions.........
+  pres_prediction_all <- extract(brt_map_all, brt_p_coords, xy = TRUE, ID = FALSE) %>%
+    rename(prediction = lyr1) %>%
     mutate(pres_abs = 1,
            variables = "all")
-  
-  abs_prediction_full <- extract(brt_map_full, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
-    rename(prediction = lyr1) %>% 
+
+  abs_prediction_all <- extract(brt_map_all, brt_a_coords, xy = TRUE, ID = FALSE) %>%
+    rename(prediction = lyr1) %>%
     mutate(pres_abs = 0,
            variables = "all")
-  
-  
+
+
   # .......isolate reduced predictions......
-  pres_prediction_reduced <- extract(brt_map_reduced, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
-    rename(prediction = lyr1) %>% 
+  pres_prediction_reduced <- extract(brt_map_reduced, brt_p_coords, xy = TRUE, ID = FALSE) %>%
+    rename(prediction = lyr1) %>%
     mutate(pres_abs = 1,
            variables = "reduced")
-  
-  abs_prediction_reduced <- extract(brt_map_reduced, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
-    rename(prediction = lyr1) %>% 
+
+  abs_prediction_reduced <- extract(brt_map_reduced, brt_a_coords, xy = TRUE, ID = FALSE) %>%
+    rename(prediction = lyr1) %>%
     mutate(pres_abs = 0,
            variables = "all")
-  
-  rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_full)
-  
+
+  rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_all)
+
   # ............combine results..........
-  combined_predictions <- rbind(pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced) %>% 
+  combined_predictions <- rbind(pres_prediction_all, abs_prediction_all, pres_prediction_reduced, abs_prediction_reduced) %>%
     mutate(plot = i)
-  
+
   brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
-  
-  rm(combined_predictions, pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced)
-  
-} # END for-loop
+
+  rm(combined_predictions, pres_prediction_all, abs_prediction_all, pres_prediction_reduced, abs_prediction_reduced)
+
+} # END BRT loop
 
 
 ```
@@ -155,22 +155,22 @@ for (i in seq(1:2)) {
   brt_p_coords <- brt_res[["p_coords"]]
   brt_a_coords <- brt_res[["a_coords"]]
   brt_pred_stack <- brt_res[["brt_pred_stack"]]
-  brt_gs_full <- brt_res[["brt_gs_full"]]
+  brt_gs_all <- brt_res[["brt_gs_all"]]
   brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
   
   
   # ..............select best model...............
-  brt_id_full <- which.max(brt_gs_full@results$test_AUC)
-  brt_best_mod_full <- combineCV(brt_gs_full@models[[brt_id_full]])
+  brt_id_all <- which.max(brt_gs_all@results$test_AUC)
+  brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
   
   brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
   brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
   
   # .............generate predictions.............
-  brt_map_full <- predict(brt_best_mod_full, data = brt_pred_stack)
+  brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
   brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
   
-  rm(brt_res, brt_id_full, brt_best_mod_full, brt_id_reduced, brt_best_mod_reduced)
+  rm(brt_res, brt_id_all, brt_best_mod_all, brt_id_reduced, brt_best_mod_reduced)
   
   
   # ...........vectorize coordinates .........
@@ -178,13 +178,13 @@ for (i in seq(1:2)) {
   brt_a_coords <- brt_a_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
   
   
-  # ........isolate full predictions.........
-  pres_prediction_full <- extract(brt_map_full, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
+  # ........isolate all predictions.........
+  pres_prediction_all <- extract(brt_map_all, brt_p_coords, xy = TRUE, ID = FALSE) %>% 
     rename(prediction = lyr1) %>% 
     mutate(pres_abs = 1,
            variables = "all")
   
-  abs_prediction_full <- extract(brt_map_full, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
+  abs_prediction_all <- extract(brt_map_all, brt_a_coords, xy = TRUE, ID = FALSE) %>% 
     rename(prediction = lyr1) %>% 
     mutate(pres_abs = 0,
            variables = "all")
@@ -201,15 +201,15 @@ for (i in seq(1:2)) {
     mutate(pres_abs = 0,
            variables = "all")
   
-  rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_full)
+  rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_all)
   
   # ............combine results..........
-  combined_predictions <- rbind(pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced) %>% 
+  combined_predictions <- rbind(pres_prediction_all, abs_prediction_all, pres_prediction_reduced, abs_prediction_reduced) %>% 
     mutate(plot = i)
   
   brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
   
-  rm(combined_predictions, pres_prediction_full, abs_prediction_full, pres_prediction_reduced, abs_prediction_reduced)
+  rm(combined_predictions, pres_prediction_all, abs_prediction_all, pres_prediction_reduced, abs_prediction_reduced)
   
 } # END for-loop
 
@@ -240,13 +240,13 @@ brt_res <- tune_brt(plot_number = 1,
 brt_p_coords <- brt_res[["p_coords"]]
 brt_test_obj <- brt_res[["brt_test"]]
 brt_pred_stack <- brt_res[["brt_pred_stack"]]
-brt_gs_full <- brt_res[["brt_gs_full"]]
+brt_gs_all <- brt_res[["brt_gs_all"]]
 brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
 
-# best model predictions for FULL model 
-brt_id_full <- which.max(brt_gs_full@results$test_AUC)
-brt_best_mod_full <- combineCV(brt_gs_full@models[[brt_id_full]])
-brt_map_full <- predict(brt_best_mod_full, data = brt_pred_stack)
+# best model predictions for all model 
+brt_id_all <- which.max(brt_gs_all@results$test_AUC)
+brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
+brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
 
 # best modl predictions for REDUCED model
 brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
@@ -254,7 +254,7 @@ brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
 brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
 
 # plot ROC results
-plotROC(brt_best_mod_full, test = brt_test_obj) + labs(title = "All Environmental Variables")
+plotROC(brt_best_mod_all, test = brt_test_obj) + labs(title = "All Environmental Variables")
 plotROC(brt_best_mod_reduced, test = brt_test_obj) + labs(title = "Reduced Environmental Variables")
 
 # tm_shape(brt_map) +

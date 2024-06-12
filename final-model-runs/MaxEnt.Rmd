@@ -60,13 +60,14 @@ Each plot indicates a different transect where cover board surveys were conducte
 # run model
 maxent_res <- tune_maxent(plot_number = 1,
                           point_dir = point_dir,
-                          rast_dir = rast_dir)
+                          rast_dir = rast_dir,
+                          include_variables = "All")
 
 # pull models from results
 maxent_test_obj <- maxent_res[["maxent_test"]]
 maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
 maxent_gs_all <- maxent_res[["maxent_gs_all"]]
-maxent_gs_reduced <- maxent_res[["maxent_gs_reduced"]]
+# maxent_gs_reduced <- maxent_res[["maxent_gs_reduced"]]
 maxent_bg_coords <- maxent_res[["bg_coords"]]
 maxent_p_coords <- maxent_res[["p_coords"]]
 
@@ -105,36 +106,4 @@ tm_shape(maxent_bg_coords) +
   tm_shape(maxent_p_coords) +
   tm_dots(col = "navy", shape = 17, size = 0.15)
 ```
-
-
-```{r, eval=FALSE}
-### FOR BRT ### 
-
-# extract absence prediction values
-abs_points <- pres_abs_points %>% 
-  filter(basp_pa == 0) %>% 
-  select(longitude, latitude) %>% 
-  vect(geom=c("longitude", "latitude"), crs="WSG84")
-
-abs_predicted <- extract(brt_map, abs_points, xy = TRUE, ID = FALSE) %>% 
-  mutate(basp_pa = 0) %>% 
-  rename(prediction = lyr1)
-
-# extract presence prediction values
-pres_points <- pres_abs_points %>% 
-  filter(basp_pa == 1) %>% 
-  select(longitude, latitude) %>% 
-  vect(geom=c("longitude", "latitude"), crs="WSG84")
-
-pres_predicted <- extract(brt_map, pres_points, xy = TRUE, ID = FALSE) %>% 
-  mutate(basp_pa = 1) %>% 
-  rename(prediction = lyr1)
-
-
-# combine
-abs_predicted %>% 
-  rbind(pres_predicted) %>% 
-  mutate(model = "BRT reduced")
-```
-
 
