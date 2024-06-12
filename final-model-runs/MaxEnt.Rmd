@@ -27,11 +27,11 @@ library(rJava)
 rm(list = ls())
 
 # set data directory
-rast_dir <- here("data", "raster-stacks")
+rast_dir <- here("data", "raster-stacks", "full-stack")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # source functions
-source(here("R", "sdmtune-maxent-final-function.R"))
+source(here("R", "sdmtune-maxent-function.R"))
 
 # occurrence points
 points <- read_sf(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp"), quiet = TRUE) %>% 
@@ -60,19 +60,19 @@ Each plot indicates a different transect where cover board surveys were conducte
 # run model
 maxent_res <- tune_maxent(plot_number = 1,
                           point_dir = point_dir,
-                          rast_dir = rast_dir,
-                          k_folds = 3)
+                          rast_dir = rast_dir)
 
 # pull models from results
 maxent_test_obj <- maxent_res[["maxent_test"]]
 maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
-maxent_gs <- maxent_res[["maxent_gs"]]
-maxent_reduced_model <- maxent_res[["maxent_mod_reduced"]]
+maxent_gs_all <- maxent_res[["maxent_gs_all"]]
+maxent_gs_reduced <- maxent_res[["maxent_gs_reduced"]]
 maxent_bg_coords <- maxent_res[["bg_coords"]]
+maxent_p_coords <- maxent_res[["p_coords"]]
 
 # isolate the top performing model & predict
-maxent_id <- which.max(maxent_gs@results$test_AUC)
-maxent_best_mod <- combineCV(maxent_gs@models[[maxent_id]])
+maxent_id <- which.max(maxent_gs_all@results$test_AUC)
+maxent_best_mod <- combineCV(maxent_gs_all@models[[maxent_id]])
 maxent_map <- predict(maxent_best_mod, data = maxent_pred_stack,
                       type = "cloglog",
                       clamp = TRUE)
@@ -91,18 +91,18 @@ tm_shape(maxent_map) +
 ## Extract Values
 
 ```{r}
-# extract absence values (bg coords)
-abs_points <- maxent_bg_coords %>% 
-  st_as_sf(coords = c("x", "y"), crs = "WSG84")
-  # vect(geom = c("x", "y"), crs = "WSG84")
+# vectorize presence and background coordinates
+maxent_bg_coords <- maxent_bg_coords %>% 
+  vect(geom = c("x", "y"), crs = "WSG84") %>% 
+  st_as_sf()
 
-# extract values for presence points
-pres_points <- points %>% 
-  select(latitude, longitude)
+maxent_p_coords <- maxent_p_coords %>% 
+  vect(geom = c("x", "y"), crs = "WSG84") %>% 
+  st_as_sf()
 
-tm_shape(abs_points) +
+tm_shape(maxent_bg_coords) +
   tm_dots(col = "lightblue", size = 0.1) +
-  tm_shape(pres_points) +
+  tm_shape(maxent_p_coords) +
   tm_dots(col = "navy", shape = 17, size = 0.15)
 ```
 
