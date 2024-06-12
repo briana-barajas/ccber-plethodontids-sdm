@@ -23,6 +23,9 @@ library(rJava)
 source(here("R", "sdmtune-brt-function.R"))
 source(here("R", "sdmtune-maxent-function.R"))
 
+# set output CSV directory
+output_dir <- here("results")
+
 
 ## ===================================================================
 ##               BRT Modeling - All & Reduced Variables           ----
@@ -112,7 +115,7 @@ for (i in seq(1:8)) {
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-stack")
+rast_dir <- here("data", "raster-stacks", "select-vars")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 
@@ -167,13 +170,14 @@ for (i in seq(1:8)) {
   
 } # END BRT select variable loop
 
+
+
+# ..................write CSV results ................
+write_csv(brt_all_predictions, here(output_dir, "brt_results.csv"))
+
 ## ===================================================================
 ##               MaxEnt Modeling - All & Reduced Variables        ----
 ## ===================================================================
-
-
-
-
 
 
 
