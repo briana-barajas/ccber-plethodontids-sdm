@@ -15,15 +15,14 @@ library(janitor)
 library(sf)
 library(tmap)
 library(terra)
-library(raster)
 library(spatialEco) #transform elev to hli
 
 # set data directory
 data_dir <- here("data", "CampRoberts_spatial_data")
-end_path <- here("data", "raster-stacks")
+end_path <- here("data", "raster-stacks", "select-vars")
 
 # source in function
-source(here("functions", "raster-processing-function.R"))
+source(here("R", "raster-processing-function.R"))
 
 ```
 
@@ -44,7 +43,7 @@ for (i in seq(1:8)) {
   
   file_path <- paste0("predictor_stack_rast_p", i, ".tif")
   
-  layer <- rast(here("data", "raster-stacks", file_path))
+  layer <- rast(here("data", "raster-stacks", "select-vars", file_path))
   
   assign(x = paste0("predictor_stack_rast_p", i),
          value = layer,
