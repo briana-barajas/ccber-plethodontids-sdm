@@ -32,6 +32,7 @@ source(here("R", "raster-processing-function.R"))
 ```{r}
 for (i in seq(1:8)) {
   createPredStack(plot_number = i,
+                  data_dir = data_dir,
                   end_path = end_path)
 }
 ```
@@ -50,4 +51,7 @@ for (i in seq(1:8)) {
          envir = .GlobalEnv)
 }
 ```
+
+
+
 

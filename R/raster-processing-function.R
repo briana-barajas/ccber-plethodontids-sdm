@@ -2,11 +2,12 @@
 #'
 #' @param plot_number Plot number raster stack will be created for 1-8
 #' @param new_crs CRS for reprojection of raster layers, default WGS84
+#' @param data_dir File path to environmental variable rasters and plot outlines
 #' @param end_path File path to store raster stacks
 #'
 #' @return Stores environmental raster predictor stack to designated path
 
-createPredStack <- function(plot_number, new_crs = "WGS84", end_path){
+createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   
   ## ========================================
   ##            Read in Data             ----
@@ -19,42 +20,53 @@ createPredStack <- function(plot_number, new_crs = "WGS84", end_path){
   #   st_make_valid() %>% 
   #   filter(plot == plot_number)
   
+  # plot outline ----
+  outline_name <- paste0("Plot_", plot_number, ".shp")
+  outline <- st_read(here(data_dir, "plot_outlines", outline_name))
+  
   # geomorphology rasters ----
-  slope <- rast(here(data_dir, "old", "crob_slope"))
-  elev <- rast(here(data_dir, "crob_elev"))
+  slope <- rast(here(data_dir, "old", "crob_slope")) %>% crop(outline, mask = TRUE)
+  elev <- rast(here(data_dir, "crob_elev")) %>% project(y = "EPSG:3310") %>% crop(outline, mask = TRUE)
   
   # create hli raster ----
   hli <-  hli(elev)
   
   # vegetation rasters ----
-  canopy <- rast(here(data_dir, "Canopy_raster",
-                      paste0("can_fx_3r_p", plot_number)))
+  canopy <- rast(here(data_dir, "Canopy_raster", paste0("can_fx_3r_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
   
-  dnd_dn <- rast(here(data_dir, "brush_IDW3rad",
-                      paste0("3rd_dnd_dn_p", plot_number)))
+  dnd_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_dnd_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
   
-  li_dn <- rast(here(data_dir, "brush_IDW3rad",
-                     paste0("3rd_li_dn_p", plot_number)))
+  li_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_li_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
   
-  gs_dn <- rast(here(data_dir, "brush_IDW3rad",
-                     paste0("3rd_gs_dn_p", plot_number)))
+  gs_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_gs_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
   
-  ba_dn <- rast(here(data_dir, "brush_IDW3rad", 
-                     paste0("3rd_ba_dn_p", plot_number)))
-  br_dn <- rast(here(data_dir, "brush_IDW3rad", 
-                     paste0("3rd_br_dn_p", plot_number)))
-  br_ht <- rast(here(data_dir, "brush_IDW3rad", 
-                     paste0("3rd_br_ht_p", plot_number)))
-  dnd_db <- rast(here(data_dir, "brush_IDW3rad",
-                      paste0("3rd_dnd_db_p", plot_number)))
-  dnd_st <- rast(here(data_dir, "brush_IDW3rad", 
-                      paste0("3rd_dnd_st_p", plot_number)))
-  fb_dn <- rast(here(data_dir, "brush_IDW3rad", 
-                     paste0("3rd_fb_dn_p", plot_number)))
-  rk_dn <- rast(here(data_dir, "brush_IDW3rad", 
-                     paste0("3rd_rk_dn_p", plot_number)))
-  dnd_stc <- rast(here(data_dir, "brush_IDW3rad", 
-                       paste0("dnd_stc_3rp", plot_number)))
+  ba_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_ba_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  br_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_br_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  br_ht <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_br_ht_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  dnd_db <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_dnd_db_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  dnd_st <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_dnd_st_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  fb_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_fb_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  rk_dn <- rast(here(data_dir, "brush_IDW3rad", paste0("3rd_rk_dn_p", plot_number))) %>% 
+    crop(outline, mask = TRUE)
+  
+  dnd_stc <- rast(here(data_dir, "brush_IDW3rad", paste0("dnd_stc_3rp", plot_number))) %>% 
+    crop(outline, mask = TRUE)
   
   
   ## ========================================
