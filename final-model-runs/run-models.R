@@ -34,7 +34,7 @@ output_dir <- here("results")
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-stack")
+rast_dir <- here("data", "raster-stacks", "full-extent", "full-stack")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # create empty df
@@ -57,10 +57,12 @@ for (i in seq(1:8)) {
   
   
   # .................select best models.................
-  brt_id_all <- which.max(brt_gs_all@results$test_AUC)
-  brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
+  brt_id_all <- which.max(brt_gs_all@results$test_AUC) #index of top model
+  brt_auc_all <- max(brt_gs_all@results$test_AUC) # top model AUC
+  brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]]) # apply model
   
   brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
+  brt_auc_reduced <- max(brt_gs_reduced@results$test_AUC)
   brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
   
   # .................generate predictions...............
@@ -99,7 +101,8 @@ for (i in seq(1:8)) {
   
   # ....................combine results.................
   combined_predictions <- rbind(pres_prediction_all, abs_prediction_all, pres_prediction_reduced, abs_prediction_reduced) %>%
-    mutate(plot = i)
+    mutate(plot = i,
+           test_auc = ifelse(variables == "all", brt_auc_all, brt_auc_reduced))
   
   brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
   
@@ -115,7 +118,7 @@ for (i in seq(1:8)) {
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "select-vars")
+rast_dir <- here("data", "raster-stacks", "full-extent", "select-vars")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 
@@ -136,6 +139,7 @@ for (i in seq(1:8)) {
   
   # .................select best models.................
   brt_id_all <- which.max(brt_gs_all@results$test_AUC)
+  brt_auc_all <- max(brt_gs_all@results$test_AUC)
   brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
   
   # .................generate predictions...............
@@ -162,7 +166,8 @@ for (i in seq(1:8)) {
   
   # ....................combine results.................
   combined_predictions <- rbind(pres_prediction_all, abs_prediction_all) %>%
-    mutate(plot = i)
+    mutate(plot = i,
+           test_auc = brt_auc_all)
   
   brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
   
@@ -179,7 +184,53 @@ write_csv(brt_all_predictions, here(output_dir, "brt_results.csv"))
 ##               MaxEnt Modeling - All & Reduced Variables        ----
 ## ===================================================================
 
+# clear environment
+rm(list=ls()[! ls() %in% c("output_dir","tune_maxent")])
 
+# ......................preparation...................
+
+# set data directory
+rast_dir <- here("data", "raster-stacks", "full-extent", "full-stack")
+point_dir <- here("data", "CampRoberts_spatial_data")
+
+# create empty df
+maxent_all_predictions <- data.frame()
+
+# ................run all & reduced Maxent............
+for (i in seq(1:8)) {
+  maxent_res <- tune_maxent(plot_number = i,
+                      point_dir = point_dir,
+                      rast_dir = rast_dir,
+                      include_variables = "both")
+  
+  # ...............store results as vars................
+  maxent_p_coords <- maxent_res[["p_coords"]]
+  maxent_bg_coords <- maxent_res[["bg_coords"]]
+  maxent_pred_stack <- maxent_res[["maxent_pred_stack"]]
+  maxent_gs_all <- maxent_res[["maxent_gs_all"]]
+  maxent_gs_reduced <- maxent_res[["maxent_gs_reduced"]]
+  
+  # .................select best models.................
+  maxent_id_all <- which.max(maxent_gs_all@results$test_AUC)
+  maxent_auc_all <- max(maxent_gs_all@results$test_AUC)
+  maxent_best_mod_all <- combineCV(maxent_gs_all@models[[maxent_id_all]])
+  
+  maxent_id_reduced <- which.max(maxent_gs_reduced@results$test_AUC)
+  maxent_auc_reduced <- max(maxent_gs_reduced@results$test_AUC)
+  maxent_best_mod_reduced <- combineCV(maxent_gs_reduced@models[[maxent_id_reduced]])
+
+  
+  # .................generate predictions...............
+  maxent_map_all <- predict(maxent_best_mod_all, data = maxent_pred_stack)
+  maxent_map_reduced <- predict(maxent_best_mod_reduced, data = maxent_pred_stack)
+  # ....................................................
+  
+  
+  
+  
+  
+  
+} # END Maxent all & reduced loop
 
 
 

@@ -27,7 +27,7 @@ library(rJava)
 rm(list = ls())
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-stack")
+rast_dir <- here("data", "raster-stacks", "full-extent", "full-stack")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # source functions
@@ -61,7 +61,7 @@ Each plot indicates a different transect where cover board surveys were conducte
 maxent_res <- tune_maxent(plot_number = 1,
                           point_dir = point_dir,
                           rast_dir = rast_dir,
-                          include_variables = "All")
+                          include_variables = "all")
 
 # pull models from results
 maxent_test_obj <- maxent_res[["maxent_test"]]
@@ -106,4 +106,6 @@ tm_shape(maxent_bg_coords) +
   tm_shape(maxent_p_coords) +
   tm_dots(col = "navy", shape = 17, size = 0.15)
 ```
+
+
 
