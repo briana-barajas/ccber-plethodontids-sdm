@@ -42,7 +42,7 @@ brt_all_predictions <- data.frame()
 
 
 # ................run all & reduced BRT...............
-for (i in seq(1:2)) {
+for (i in seq(1:8)) {
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
