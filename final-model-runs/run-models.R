@@ -43,6 +43,9 @@ brt_all_predictions <- data.frame()
 
 # ................run all & reduced BRT...............
 for (i in seq(1:8)) {
+  
+  print(paste0(" ========== BRT All & Reduced Variables - Plot ", i, "=========="))
+  
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
@@ -121,6 +124,8 @@ point_dir <- here("data", "CampRoberts_spatial_data")
 # ................Run model w/ select variables.......
 for (i in seq(1:8)) {
   
+  print(paste0(" ========== BRT Select Variables - Plot ", i, "=========="))
+  
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
@@ -190,6 +195,9 @@ maxent_all_predictions <- data.frame()
 
 # ................run all & reduced Maxent............
 for (i in seq(1:8)) {
+  
+  print(paste0(" ========== Maxent All & Reduced Variables - Plot ", i, "=========="))
+  
   maxent_res <- tune_maxent(plot_number = i,
                             point_dir = point_dir,
                             rast_dir = rast_dir,
@@ -272,6 +280,8 @@ point_dir <- here("data", "CampRoberts_spatial_data")
 
 # ................Run model w/ select variables.......
 for (i in seq(1:8)) {
+  
+  print(paste0(" ========== Maxent Select Variables - Plot ", i, "=========="))
   
   maxent_res <- tune_maxent(plot_number = i,
                             point_dir = point_dir,
