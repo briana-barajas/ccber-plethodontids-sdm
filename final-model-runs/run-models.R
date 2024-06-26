@@ -42,7 +42,7 @@ brt_all_predictions <- data.frame()
 
 
 # ................run all & reduced BRT...............
-for (i in seq(1:8)) {
+for (i in seq(1:2)) {
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
@@ -70,10 +70,6 @@ for (i in seq(1:8)) {
   brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
   
   rm(brt_res, brt_id_all, brt_best_mod_all, brt_id_reduced, brt_best_mod_reduced)
-  
-  # .................vectorize coordinates .............
-  brt_p_coords <- brt_p_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
-  brt_a_coords <- brt_a_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
   
   # ...............isolate all predictions..............
   pres_prediction_all <- extract(brt_map_all, brt_p_coords, xy = TRUE, ID = FALSE) %>%
@@ -147,10 +143,6 @@ for (i in seq(1:8)) {
   
   rm(brt_res, brt_id_all, brt_best_mod_all)
   
-  # .................vectorize coordinates .............
-  brt_p_coords <- brt_p_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
-  brt_a_coords <- brt_a_coords %>% vect(geom = c("x", "y"), crs = "WSG84")
-  
   # ...............isolate all predictions..............
   pres_prediction_all <- extract(brt_map_all, brt_p_coords, xy = TRUE, ID = FALSE) %>%
     rename(prediction = lyr1) %>%
@@ -197,7 +189,7 @@ point_dir <- here("data", "CampRoberts_spatial_data")
 maxent_all_predictions <- data.frame()
 
 # ................run all & reduced Maxent............
-for (i in seq(1:2)) {
+for (i in seq(1:8)) {
   maxent_res <- tune_maxent(plot_number = i,
                             point_dir = point_dir,
                             rast_dir = rast_dir,
