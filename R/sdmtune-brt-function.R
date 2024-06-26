@@ -60,9 +60,9 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   brt_test <- split[[2]]
   
   # prepare cross validation folds
-  #k_max <- round(nrow(distinct(p_coords, x, y)) * 0.8)
+  k_max <- round(nrow(distinct(p_coords, x, y)) * 0.8)
   
-  cv_folds <- randomFolds(train, k = 3, only_presence = FALSE)
+  cv_folds <- randomFolds(train, k = k_max, only_presence = FALSE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -79,8 +79,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   param_tune <- list(
     distribution = "gaussian",
     n.trees = seq(10, 100, 10),
-    # interaction.depth = seq(1,6,1),
-    # shrinkage = seq(0.01, 0.1, 0.01),
+    interaction.depth = seq(1,6,1),
+    shrinkage = seq(0.01, 0.1, 0.01),
     bag.fraction = seq(0.5, 0.75, 0.05)
   )
   
