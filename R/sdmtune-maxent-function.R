@@ -69,7 +69,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, include_variables = "b
   maxent_test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
+  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.55)
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
   

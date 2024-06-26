@@ -60,7 +60,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   brt_test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(p_coords, x, y)) * 0.8)
+  k_max <- round(nrow(distinct(p_coords, x, y)) * 0.55)
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = FALSE)
   
