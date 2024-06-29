@@ -19,10 +19,10 @@ library(spatialEco) #transform elev to hli
 
 # set data directory
 data_dir <- here("data", "CampRoberts_spatial_data")
-end_path <- here("data", "raster-stacks", "full-extent", "select-vars")
+end_path <- here("data", "raster-stacks", "select-variables")
 
 # source in function
-source(here("R", "full-raster-pre-processing.R"))
+source(here("R", "raster-processing-function.R"))
 
 ```
 
