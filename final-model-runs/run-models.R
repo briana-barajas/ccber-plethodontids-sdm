@@ -34,7 +34,7 @@ output_dir <- here("results")
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-extent", "full-stack")
+rast_dir <- here("data", "raster-stacks", "all-variables")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # create empty df
@@ -44,7 +44,7 @@ brt_all_predictions <- data.frame()
 # ................run all & reduced BRT...............
 for (i in seq(1:8)) {
   
-  print(paste0(" ========== BRT All & Reduced Variables - Plot ", i, "=========="))
+  print(paste0(" ========== BRT All & Reduced Variables - Plot ", i, " =========="))
   
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
@@ -94,7 +94,7 @@ for (i in seq(1:8)) {
   abs_prediction_reduced <- extract(brt_map_reduced, brt_a_coords, xy = TRUE, ID = FALSE) %>%
     rename(prediction = lyr1) %>%
     mutate(pres_abs = 0,
-           variables = "all")
+           variables = "reduced")
   
   rm(brt_p_coords, brt_a_coords, brt_map_reduced, brt_map_all)
   
@@ -117,14 +117,14 @@ for (i in seq(1:8)) {
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-extent", "select-vars")
+rast_dir <- here("data", "raster-stacks", "select-variables")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 
 # ................Run model w/ select variables.......
 for (i in seq(1:8)) {
   
-  print(paste0(" ========== BRT Select Variables - Plot ", i, "=========="))
+  print(paste0(" ========== BRT Select Variables - Plot ", i, " =========="))
   
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
@@ -187,7 +187,7 @@ rm(list=ls()[! ls() %in% c("output_dir","tune_maxent")])
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-extent", "full-stack")
+rast_dir <- here("data", "raster-stacks", "all-variables")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # create empty df
@@ -196,7 +196,7 @@ maxent_all_predictions <- data.frame()
 # ................run all & reduced Maxent............
 for (i in seq(1:8)) {
   
-  print(paste0(" ========== Maxent All & Reduced Variables - Plot ", i, "=========="))
+  print(paste0(" ========== Maxent All & Reduced Variables - Plot ", i, " =========="))
   
   maxent_res <- tune_maxent(plot_number = i,
                             point_dir = point_dir,
@@ -275,13 +275,13 @@ for (i in seq(1:8)) {
 # ......................preparation...................
 
 # set data directory
-rast_dir <- here("data", "raster-stacks", "full-extent", "select-vars")
+rast_dir <- here("data", "raster-stacks", "select-variables")
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # ................Run model w/ select variables.......
 for (i in seq(1:8)) {
   
-  print(paste0(" ========== Maxent Select Variables - Plot ", i, "=========="))
+  print(paste0(" ========== Maxent Select Variables - Plot ", i, " =========="))
   
   maxent_res <- tune_maxent(plot_number = i,
                             point_dir = point_dir,
