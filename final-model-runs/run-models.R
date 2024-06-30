@@ -74,6 +74,7 @@ for (i in seq(1:8)) {
   
   rm(brt_res, brt_id_all, brt_best_mod_all, brt_id_reduced, brt_best_mod_reduced)
   
+  
   # ...............isolate all predictions..............
   pres_prediction_all <- extract(brt_map_all, brt_p_coords, xy = TRUE, ID = FALSE) %>%
     rename(prediction = lyr1) %>%
@@ -324,7 +325,7 @@ for (i in seq(1:8)) {
   maxent_all_predictions <- rbind(maxent_all_predictions, combined_predictions)
   
   rm(combined_predictions, pres_prediction_all, abs_prediction_all, maxent_gs_all, maxent_gs_reduced, maxent_pred_stack)
-
+  
 } # END Maxent select variable loop
 
 # ..................write CSV results ................
