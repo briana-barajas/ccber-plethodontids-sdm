@@ -89,6 +89,8 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   ## ========================================
   ##          Crop to Plot Outline       ----
   ## ========================================
+  # add buffer around outline ----
+  outline <- st_buffer(outline, 3.5)
   
   # geomorphology rast crop ----
   elev <- crop(elev, outline, mask = TRUE)
@@ -138,7 +140,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   ## ========================================
   # create raster stack ----
   predictor_stack_rast <- c(elev, gs_dn, li_dn, hli, dnd_dn, slope,
-                            # comment out center line for "select" stacks
+                            # comment out center line of variables for "select" stacks
                             ba_dn, br_ht, dnd_st, br_dn, dnd_stc, dnd_db, fb_dn, rk_dn,
                             canopy)
   
