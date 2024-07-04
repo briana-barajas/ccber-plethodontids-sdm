@@ -141,7 +141,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   # create raster stack ----
   predictor_stack_rast <- c(elev, gs_dn, li_dn, hli, dnd_dn, slope,
                             # comment out center line of variables for "select" stacks
-                            ba_dn, br_ht, dnd_st, br_dn, dnd_stc, dnd_db, fb_dn, rk_dn,
+                            # ba_dn, br_ht, dnd_st, br_dn, dnd_stc, dnd_db, fb_dn, rk_dn,
                             canopy)
   
   # export raster stack ----
