@@ -66,7 +66,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   elev <- project(elev, y = new_crs)
   slope <- project(slope, y = new_crs)
   hli <- project(hli, y = new_crs)
-
+  
   # veg rast reprojection ----
   canopy <- project(x = canopy, y = new_crs)
   dnd_dn <- project(x = dnd_dn, y = new_crs)
@@ -85,6 +85,29 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   # outline ----
   outline <- st_transform(outline, crs = new_crs)
   
+  ## ========================================
+  ##           Resample Geo Layers       ----
+  ## ========================================
+  # update resolution in all geomorphology rasters ----
+  elev <- resample(elev, canopy)
+  slope <- resample(slope, canopy)
+  hli <- resample(hli, canopy)
+  
+  ## ========================================
+  ##             Adjust Extent           ----
+  ## ========================================
+  # save extent ----
+  can_extent <- ext(canopy)
+  
+  # update geo raster ext ----
+  ext(elev) <- c(can_extent$xmin, can_extent$xmax,
+                 can_extent$ymin, can_extent$ymax)
+  
+  ext(slope) <- c(can_extent$xmin, can_extent$xmax,
+                  can_extent$ymin, can_extent$ymax)
+  
+  ext(hli) <- c(can_extent$xmin, can_extent$xmax,
+                can_extent$ymin, can_extent$ymax)
   
   ## ========================================
   ##          Crop to Plot Outline       ----
@@ -112,28 +135,6 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   rk_dn <- crop(rk_dn, outline, mask = TRUE)
   dnd_stc <- crop(dnd_stc, outline, mask = TRUE)
   
-  ## ========================================
-  ##          Ressolution & Extent       ----
-  ## ========================================
-  
-  # save extent ----
-  can_extent <- ext(canopy)
-  
-  # update geo raster ext ----
-  ext(elev) <- c(can_extent$xmin, can_extent$xmax,
-                 can_extent$ymin, can_extent$ymax)
-  
-  ext(slope) <- c(can_extent$xmin, can_extent$xmax,
-                  can_extent$ymin, can_extent$ymax)
-  
-  ext(hli) <- c(can_extent$xmin, can_extent$xmax,
-                can_extent$ymin, can_extent$ymax)
-  
-  # update resolution in all geomorphic layers ----
-  elev <- resample(elev, canopy)
-  slope <- resample(slope, canopy)
-  hli <- resample(hli, canopy)
-
   
   ## ========================================
   ##            Export Raster Stacks     ----
@@ -141,7 +142,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   # create raster stack ----
   predictor_stack_rast <- c(elev, gs_dn, li_dn, hli, dnd_dn, slope,
                             # comment out center line of variables for "select" stacks
-                            # ba_dn, br_ht, dnd_st, br_dn, dnd_stc, dnd_db, fb_dn, rk_dn,
+                            ba_dn, br_ht, dnd_st, br_dn, dnd_stc, dnd_db, fb_dn, rk_dn,
                             canopy)
   
   # export raster stack ----

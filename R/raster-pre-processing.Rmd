@@ -1,5 +1,5 @@
 ---
-title: "Run createPredStack for All Plotes"
+title: "Run createPredStack for All Plots"
 subtitle: "Creating environmental raster stacks for all plots"
 author: "Briana Barajas"
 date: 2024-05-29
@@ -56,7 +56,7 @@ for (i in seq(1:8)) {
 ## Check Occurence Points
 
 ```{r, eval=FALSE}
-plot_number <- 5
+plot_number <- 7
 point_dir <- here("data", "CampRoberts_spatial_data")
 
 # read in occurrence points
@@ -67,7 +67,7 @@ occurrences <- st_read(here(point_dir, "Species_pts", "CR_BASP_obs_11Jul22.shp")
   st_transform(crs = "WGS84")
 
 # plot points within cropped raster 
-tm_shape(predictor_stack_rast_p5$canopy_cover) +
+tm_shape(predictor_stack_rast_p7$canopy_cover) +
   tm_raster(palette = "YlGn") +
   tm_shape(occurrences) +
   tm_dots(size = 0.2)
@@ -99,5 +99,18 @@ tm_shape(predictor_stack_rast_p8$canopy_cover) +
   tm_shape(a_coords) +
   tm_dots(size = 0.2)
 
+```
+
+
+## Check Number of Cells
+```{r}
+global(predictor_stack_rast_p1, fun = "notNA")
+global(predictor_stack_rast_p2, fun = "notNA") # not identical
+global(predictor_stack_rast_p3, fun = "notNA")
+global(predictor_stack_rast_p4, fun = "notNA") # not identical
+global(predictor_stack_rast_p5, fun = "notNA")
+global(predictor_stack_rast_p6, fun = "notNA")
+global(predictor_stack_rast_p7, fun = "notNA")
+global(predictor_stack_rast_p8, fun = "notNA")
 ```
 
