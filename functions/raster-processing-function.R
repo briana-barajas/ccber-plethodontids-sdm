@@ -18,7 +18,7 @@ createPredStack <- function(plot_number, new_crs = "WGS84", data_dir, end_path){
   outline <- st_read(here(data_dir, "plot_outlines", outline_name))
   
   # geomorphology rasters ----
-  slope <- rast(here(data_dir, "old", "crob_slope"))
+  slope <- rast(here(data_dir, "crob_slope"))
   elev <- rast(here(data_dir, "crob_elev"))
   
   # create hli layer ----
