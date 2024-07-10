@@ -33,15 +33,12 @@ The environmental variables used are as follows:
 **Completed**
 
 1.  Exploratory modeling using default MaxEnt settings via the `dismo` package
-
 2.  Determined hyperparameter settings to be included in model tuning
-
 3.  Developed functions to apply tuned models to selected survey plot
 
 **In Progress**
 
 1.  Adjusting raster data to confine model to sampled area & customize the number of background points (MaxEnt only) to each plot
-
 2.  Applying R-script to model 8 plots with three environmental variable scenarios (all, filtered using jackknifing, expert-selected)
 
 ------------------------------------------------------------------------
