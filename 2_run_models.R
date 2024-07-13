@@ -20,8 +20,8 @@ library(rsample)
 library(rJava)
 
 # source functions
-source(here("R", "sdmtune-brt-function.R"))
-source(here("R", "sdmtune-maxent-function.R"))
+source(here("functions", "sdmtune-brt-function.R"))
+source(here("functions", "sdmtune-maxent-function.R"))
 
 # set output CSV directory
 output_dir <- here("results")

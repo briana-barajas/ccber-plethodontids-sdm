@@ -36,12 +36,14 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, include_variables = "b
            x = longitude) %>% 
     dplyr::select(x,y)
   
+  # count high proportion of cells for bg points
+  no_bg_points <- round(min(global(maxent_pred_stack, fun ="notNA")) * 0.9)
+  
   # create background points using raster stack
   bg_points <- spatSample(maxent_pred_stack,
-                          size = 1000, #customize number of cells by plot
+                          size = no_bg_points,
                           replace = TRUE,
                           xy = TRUE,
-                          ext = maxent_pred_stack,
                           na.rm = TRUE)
   
   # isolate coordinates of bg points
@@ -71,7 +73,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, include_variables = "b
   maxent_test <- split[[2]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.8)
+  k_max <- round(nrow(distinct(occurrence_coords, x, y)) * 0.55)
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = TRUE)
   
