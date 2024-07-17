@@ -14,7 +14,7 @@ library(spatialEco) #transform elev to hli
 
 # set data directory
 data_dir <- here("data", "CampRoberts_spatial_data")
-end_path <- here("data", "raster-stacks", "select-variables")
+end_path <- here("data", "raster-stacks", "all-variables")
 
 # source in function
 source(here("R", "raster-processing-function.R"))
@@ -95,11 +95,11 @@ for (i in seq(1:8)) {
 ## ===================================================================
 
 # count number of cells for MaxEnt background points
-# global(predictor_stack_rast_p1, fun = "notNA")
-# global(predictor_stack_rast_p2, fun = "notNA") # not identical
-# global(predictor_stack_rast_p3, fun = "notNA")
-# global(predictor_stack_rast_p4, fun = "notNA") # not identical
-# global(predictor_stack_rast_p5, fun = "notNA")
-# global(predictor_stack_rast_p6, fun = "notNA")
-# global(predictor_stack_rast_p7, fun = "notNA")
-# global(predictor_stack_rast_p8, fun = "notNA")
+global(predictor_stack_rast_p1, fun = "notNA")
+global(predictor_stack_rast_p2, fun = "notNA") # not identical
+global(predictor_stack_rast_p3, fun = "notNA")
+global(predictor_stack_rast_p4, fun = "notNA") # not identical
+global(predictor_stack_rast_p5, fun = "notNA")
+global(predictor_stack_rast_p6, fun = "notNA")
+global(predictor_stack_rast_p7, fun = "notNA")
+global(predictor_stack_rast_p8, fun = "notNA")

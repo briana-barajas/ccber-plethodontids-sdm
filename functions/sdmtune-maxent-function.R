@@ -83,7 +83,7 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, include_variables = "b
   print(paste0("Define Model & Variables"))
   
   # define model
-  maxent_model <- train(method = "Maxnet",
+  maxent_model <- train(method = "Maxent",
                         progress = FALSE,
                         folds = cv_folds,
                         data = train)
