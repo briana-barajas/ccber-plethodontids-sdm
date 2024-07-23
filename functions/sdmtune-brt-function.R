@@ -78,9 +78,9 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   # select hyper parameters for testing
   param_tune <- list(
     distribution = "gaussian",
-    # n.trees = seq(10, 100, 10),
-    # interaction.depth = seq(1,6,1),
-    # shrinkage = seq(0.01, 0.1, 0.01),
+    n.trees = seq(10, 100, 10),
+    interaction.depth = seq(1,6,1),
+    shrinkage = seq(0.01, 0.1, 0.01),
     bag.fraction = seq(0.5, 0.75, 0.05)
   )
   
