@@ -176,7 +176,7 @@ for (i in seq(1:8)) {
 
 
 # ..................write CSV results ................
-write_csv(brt_all_predictions, here(output_dir, "brt_results.csv"))
+write_csv(brt_all_predictions, here(output_dir, "brt_pa_results.csv"))
 
 ## ===================================================================
 ##               MaxEnt Modeling - All & Reduced Variables        ----
