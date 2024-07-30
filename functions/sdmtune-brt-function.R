@@ -4,10 +4,12 @@
 #' @param point_dir File path for occurrence point data
 #' @param rast_dir File path for environmental variables
 #' @param include_variables Model with "all", or "reduced" environmental variables, default is "both"
+#' @param pres_abs Uses presence/absence points if TRUE, or background points if FALSE
 #'
 #' @return Grid search results, initial BRT model, reduced variable BRT model, and test data
 #'
-tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both"){
+tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both",
+                     pres_abs = TRUE){
   
   ## ========================================
   ##              Load Data              ----
@@ -15,7 +17,8 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   print(paste0("Load Data"))
   
   # load occurrence points
-  occurrences <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv"), show_col_types = FALSE) %>% 
+  occurrences <- read_csv(here(point_dir, "Species_pts", "BASP_pres_abs.csv"), 
+                          show_col_types = FALSE) %>% 
     clean_names() %>% 
     filter(plot == plot_number)
   
@@ -28,16 +31,37 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   ## ========================================
   print(paste0("Occurrence Data Preparation"))
   
-  # split presence and absence points
+  # read in occurrence points
   p_coords <- occurrences %>% 
     filter(basp_pa == 1) %>% 
     rename(y = latitude, x = longitude) %>% 
     dplyr::select(x,y)
   
-  a_coords <- occurrences %>% 
-    filter(basp_pa == 0) %>% 
-    rename(y = latitude, x = longitude) %>% 
-    dplyr::select(x,y)
+  if (pres_abs == TRUE) {
+    
+    a_coords <- occurrences %>% 
+      filter(basp_pa == 0) %>% 
+      rename(y = latitude, x = longitude) %>% 
+      dplyr::select(x,y)
+    
+  } else if (pres_abs == FALSE) {
+    # count high proportion of cells for bg points
+    no_bg_points <- round(min(global(brt_pred_stack, fun ="notNA")) * 0.9)
+    
+    # create background points using raster stack
+    bg_points <- spatSample(brt_pred_stack,
+                            size = no_bg_points,
+                            replace = TRUE,
+                            xy = TRUE,
+                            na.rm = TRUE)
+    
+    # isolate coordinates of bg points
+    a_coords <- bg_points %>% dplyr::select(c(x,y))
+    
+  } else {
+    # error if T/F not inputted
+    stop(paste0("pres_abs must be TRUE or FALSE"))
+  }
   
   ## ========================================
   ##           Model Pre-Processing      ----
@@ -62,7 +86,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   # prepare cross validation folds
   k_max <- round(nrow(distinct(p_coords, x, y)) * 0.55)
   
-  cv_folds <- randomFolds(train, k = k_max, only_presence = FALSE)
+  cv_folds <- randomFolds(train, k = 3, only_presence = FALSE)
   
   ## ========================================
   ##          Define Model & Variables   ----
@@ -192,8 +216,5 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   return(res)
   
 } # END function
-
-
-
 
 

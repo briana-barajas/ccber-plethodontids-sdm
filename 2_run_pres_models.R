@@ -49,7 +49,8 @@ for (i in seq(1:8)) {
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
-                      include_variables = "both")
+                      include_variables = "both",
+                      pres_abs = FALSE)
   
   # ...............store results as vars................
   brt_p_coords <- brt_res[["p_coords"]]
@@ -130,7 +131,8 @@ for (i in seq(1:8)) {
   brt_res <- tune_brt(plot_number = i,
                       point_dir = point_dir,
                       rast_dir = rast_dir,
-                      include_variables = "all")
+                      include_variables = "all",
+                      pres_abs = FALSE)
   
   # ...............store results as vars................
   brt_p_coords <- brt_res[["p_coords"]]
@@ -169,14 +171,13 @@ for (i in seq(1:8)) {
   
   brt_all_predictions <- rbind(brt_all_predictions, combined_predictions)
   
-  rm(combined_predictions, pres_prediction_all, abs_prediction_all, brt_gs_all, brt_gs_reduced, brt_pred_stack)
+  rm(combined_predictions, pres_prediction_all, abs_prediction_all, brt_gs_all, brt_pred_stack)
   
 } # END BRT select variable loop
 
 
-
 # ..................write CSV results ................
-write_csv(brt_all_predictions, here(output_dir, "brt_pa_results.csv"))
+write_csv(brt_all_predictions, here(output_dir, "brt_p_results.csv"))
 
 ## ===================================================================
 ##               MaxEnt Modeling - All & Reduced Variables        ----
@@ -330,7 +331,3 @@ for (i in seq(1:8)) {
 
 # ..................write CSV results ................
 write_csv(maxent_all_predictions, here(output_dir, "maxent_results.csv"))
-
-
-
-
