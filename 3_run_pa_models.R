@@ -68,12 +68,14 @@ for (i in seq(1:8)) {
   brt_auc_reduced <- max(brt_gs_reduced@results$test_AUC)
   brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
   
-  # .................generate predictions...............
+  # .............generate & save predictions............
   brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
   brt_map_reduced <- predict(brt_best_mod_reduced, data = brt_pred_stack)
   
-  rm(brt_res, brt_id_all, brt_best_mod_all, brt_id_reduced, brt_best_mod_reduced)
+  writeRaster(brt_map_all, paste0(output_dir, "/maps-all/brt_pa_p", i, ".tif"))
+  writeRaster(brt_map_reduced, paste0(output_dir, "/maps-reduced/brt_pa_p", i, ".tif"))
   
+  rm(brt_res, brt_id_all, brt_best_mod_all, brt_id_reduced, brt_best_mod_reduced)
   
   # ...............isolate all predictions..............
   pres_prediction_all <- extract(brt_map_all, brt_p_coords, xy = TRUE, ID = FALSE) %>%
@@ -145,8 +147,10 @@ for (i in seq(1:8)) {
   brt_auc_all <- max(brt_gs_all@results$test_AUC)
   brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
   
-  # .................generate predictions...............
+  # .............generate & save predictions............
   brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
+  
+  writeRaster(brt_map_all, paste0(output_dir, paste0("/maps-select/brt_pa_p", i, ".tif")))
   
   rm(brt_res, brt_id_all, brt_best_mod_all)
   
