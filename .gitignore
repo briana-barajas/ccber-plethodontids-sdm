@@ -19,3 +19,4 @@ outputs/*/*/species.lambdas
 data/
 scratch/
 single-rasts/
+results/
