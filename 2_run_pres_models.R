@@ -234,8 +234,8 @@ for (i in seq(1:8)) {
   maxent_map_reduced <- predict(maxent_best_mod_reduced, data = maxent_pred_stack,
                                 type = "cloglog", clamp = TRUE)
   
-  writeRaster(maxent_map_all, paste0(output_dir, "/maps-all/maxent_p_p_", i, ".tif"))
-  writeRaster(maxent_map_reduced, paste0(output_dir, "/maps-reduced/maxent_p_p_", i, ".tif"))
+  writeRaster(maxent_map_all, paste0(output_dir, "/maps-all/maxent_p_p", i, ".tif"))
+  writeRaster(maxent_map_reduced, paste0(output_dir, "/maps-reduced/maxent_p_p", i, ".tif"))
   
   rm(maxent_res, maxent_id_all, maxent_id_reduced, maxent_best_mod_reduced, maxent_best_mod_all)
   
