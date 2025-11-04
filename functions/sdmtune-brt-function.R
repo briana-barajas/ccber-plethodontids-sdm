@@ -12,6 +12,15 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                      pres_abs = TRUE){
   
   ## ========================================
+  ##      function vars for testing      ----
+  ## ========================================
+  #plot_number <- 1
+  #point_dir <- "data/CampRoberts_spatial_data"
+  #rast_dir <- "data/raster-stacks/all-variables"
+  #include_variables = "both"
+  #pres_abs = "FALSE"
+    
+  ## ========================================
   ##              Load Data              ----
   ## ========================================
   print(paste0("Load Data"))
@@ -77,14 +86,17 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
   # split data into test and train
   split <- trainValTest(swd_obj, 
                         test = 0.2,
-                        val = 0, 
+                        val = 0.2, # <----------------- 2025-10-22 updated val from 0 to 0.2 
                         only_presence = FALSE, 
                         seed = 2) 
+  
   train <- split[[1]]
-  brt_test <- split[[2]]
+  brt_val <- split[[2]] # <----------------- 2025-10-22 extract validation data
+  brt_test <- split[[3]]
   
   # prepare cross validation folds
-  k_max <- round(nrow(distinct(p_coords, x, y)) * 0.55)
+  #k_max <- round(nrow(distinct(p_coords, x, y)) * 0.55)
+  k_max <- 3 # <---------------------------------------- 2025-10-22 REVERT ONCE DONE TESTING
   
   cv_folds <- randomFolds(train, k = k_max, only_presence = FALSE)
   
@@ -123,7 +135,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  verbose = FALSE,
                                  th = 2,
                                  metric = "auc",
-                                 test = brt_test,
+                                 test = brt_val,
                                  use_jk = TRUE)
     
     # ..............grid search.............
@@ -133,7 +145,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                              progress = FALSE,
                              hypers = param_tune, 
                              metric = "auc", 
-                             test = brt_test)
+                             test = brt_val)
     
     print(paste0("Grid Search - Reduced Variables"))
     brt_gs_reduced <- gridSearch(brt_mod_reduced, 
@@ -141,11 +153,11 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  progress = FALSE,
                                  hypers = param_tune, 
                                  metric = "auc", 
-                                 test = brt_test)
+                                 test = brt_val)
     
     # ...............return results...............
-    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_all, brt_gs_reduced)
-    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_all", "brt_gs_reduced")
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_all, brt_gs_reduced, brt_val)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_all", "brt_gs_reduced", "brt_val")
     
     
     ## ========================================
@@ -162,7 +174,7 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  verbose = FALSE,
                                  th = 2,
                                  metric = "auc",
-                                 test = brt_test,
+                                 test = brt_val,
                                  use_jk = TRUE)
     
     # ..............grid search.............
@@ -172,11 +184,11 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                                  progress = FALSE,
                                  hypers = param_tune, 
                                  metric = "auc", 
-                                 test = brt_test)
+                                 test = brt_val)
     
     # ...............return results...............
-    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_reduced)
-    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_reduced")
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_reduced, brt_val)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_reduced", "brt_val")
     
     
     ## ========================================
@@ -192,11 +204,11 @@ tune_brt <- function(plot_number, point_dir, rast_dir, include_variables = "both
                              progress = FALSE,
                              hypers = param_tune, 
                              metric = "auc", 
-                             test = brt_test)
+                             test = brt_val)
     
     # ...............return results...............
-    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_all)
-    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_all")
+    res <- list(p_coords, a_coords, brt_test, brt_pred_stack, brt_gs_all, brt_val)
+    names(res) <- list("p_coords", "a_coords", "brt_test", "brt_pred_stack", "brt_gs_all", "brt_val")
     
     
     
