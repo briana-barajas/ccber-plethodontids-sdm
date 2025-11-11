@@ -72,11 +72,11 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, include_variables = "b
   swd_obj <- addSamplesToBg(swd_obj)
   
   # split data into test and train
-  split <- trainValTest(swd_obj, 
-                        test = 0.2,
-                        val = 0, 
-                        only_presence = TRUE, 
-                        seed = 2) 
+  # split <- trainValTest(swd_obj, 
+  #                       test = 0.2,
+  #                       val = 0, 
+  #                       only_presence = TRUE, 
+  #                       seed = 2) 
   
   split <- trainValTest(swd_obj, 
                         test = 0.2,
@@ -191,11 +191,11 @@ tune_maxent <- function(plot_number, point_dir, rast_dir, include_variables = "b
                                 progress = FALSE,
                                 hypers = param_tune, 
                                 metric = "auc", 
-                                test = maxent_test)
+                                test = maxent_val)
     
     # ...............return results...............
-    res <- list(bg_coords, occurrence_coords, maxent_test, maxent_pred_stack, maxent_gs_all)
-    names(res) <- list("bg_coords", "p_coords", "maxent_test", "maxent_pred_stack", "maxent_gs_all")
+    res <- list(bg_coords, occurrence_coords, maxent_test, maxent_pred_stack, maxent_gs_all, maxent_val)
+    names(res) <- list("bg_coords", "p_coords", "maxent_test", "maxent_pred_stack", "maxent_gs_all", "maxent_val")
     
     
     ## ========================================

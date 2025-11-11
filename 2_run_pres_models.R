@@ -403,10 +403,10 @@ for (i in seq(1:8)) {
 
   # Create new training data set using variables in best performing model 2025-10-22
   maxent_train_all <- maxent_gs_all@models[[maxent_id_all]]@data 
-
-  # Merge validation data with filtered train data 2025-10-22
-  maxent_train_all <- mergeSWD(maxent_train_all, maxent_val, only_presence = TRUE)
   
+  # Merge validation data with filtered train data 2025-10-22
+  test <- mergeSWD(maxent_train_all, maxent_val, only_presence = TRUE)
+
   # .............generate & save predictions............
   #2025-10-22 train model on combined validation and training data
   maxent_best_mod_all <- train(method = "Maxent", 

@@ -57,16 +57,51 @@ for (i in seq(1:8)) {
   brt_pred_stack <- brt_res[["brt_pred_stack"]]
   brt_gs_all <- brt_res[["brt_gs_all"]]
   brt_gs_reduced <- brt_res[["brt_gs_reduced"]]
+  brt_val <- brt_res[["brt_val"]]
+  brt_test <- brt_res[["brt_test"]]
   
   
   # .................select best models.................
-  brt_id_all <- which.max(brt_gs_all@results$test_AUC) #index of top model
-  brt_auc_all <- max(brt_gs_all@results$test_AUC) # top model AUC
-  brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]]) # apply model
   
+  #index of top performing model by AUC 2025-10-22
+  brt_id_all <- which.max(brt_gs_all@results$test_AUC)
   brt_id_reduced <- which.max(brt_gs_reduced@results$test_AUC)
-  brt_auc_reduced <- max(brt_gs_reduced@results$test_AUC)
-  brt_best_mod_reduced <- combineCV(brt_gs_reduced@models[[brt_id_reduced]])
+  
+  # Create new training data set using variables in best performing model 2025-10-22
+  brt_train_all <- brt_gs_all@models[[brt_id_all]]@data 
+  brt_train_reduced <- brt_gs_reduced@models[[brt_id_reduced]]@data 
+  
+  # Merge validation data with filtered train data 2025-10-22
+  brt_train_all <- mergeSWD(brt_train_all, brt_val, only_presence = TRUE)
+  brt_train_reduced <- mergeSWD(brt_train_reduced, brt_val, only_presence = TRUE)
+  
+  # .............generate & save predictions............
+  #2025-10-22 train model on combined validation and training data
+  brt_best_mod_all <- train(method = "BRT", 
+                            progress = FALSE,
+                            data = brt_train_all,
+                            distribution = brt_gs_all@results[brt_id_all, 1],
+                            n.trees = brt_gs_all@results[brt_id_all, 2],
+                            interaction.depth = brt_gs_all@results[brt_id_all, 3],
+                            shrinkage = brt_gs_all@results[brt_id_all, 4],
+                            bag.fraction = brt_gs_all@results[brt_id_all, 5]
+  )
+  
+  
+  brt_best_mod_reduced <- train(method = "BRT", 
+                                progress = FALSE,
+                                data = brt_train_reduced,
+                                distribution = brt_gs_all@results[brt_id_all, 1],
+                                n.trees = brt_gs_all@results[brt_id_all, 2],
+                                interaction.depth = brt_gs_all@results[brt_id_all, 3],
+                                shrinkage = brt_gs_all@results[brt_id_all, 4],
+                                bag.fraction = brt_gs_all@results[brt_id_all, 5]
+  )
+  
+  
+  # pull AUC of model using TEST data
+  brt_auc_all <- auc(brt_best_mod_all, test=brt_test)
+  brt_auc_reduced <- auc(brt_best_mod_reduced, test=brt_test)
   
   # .............generate & save predictions............
   brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
@@ -140,12 +175,39 @@ for (i in seq(1:8)) {
   brt_a_coords <- brt_res[["a_coords"]]
   brt_pred_stack <- brt_res[["brt_pred_stack"]]
   brt_gs_all <- brt_res[["brt_gs_all"]]
+  brt_val <- brt_res[["brt_val"]]
+  brt_test <- brt_res[["brt_test"]]
   
   
   # .................select best models.................
+  # brt_id_all <- which.max(brt_gs_all@results$test_AUC)
+  # brt_auc_all <- max(brt_gs_all@results$test_AUC)
+  # brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
+  
+  #index of top performing model by AUC 2025-10-22
   brt_id_all <- which.max(brt_gs_all@results$test_AUC)
-  brt_auc_all <- max(brt_gs_all@results$test_AUC)
-  brt_best_mod_all <- combineCV(brt_gs_all@models[[brt_id_all]])
+
+  # Create new training data set using variables in best performing model 2025-10-22
+  brt_train_all <- brt_gs_all@models[[brt_id_all]]@data 
+
+  # Merge validation data with filtered train data 2025-10-22
+  brt_train_all <- mergeSWD(brt_train_all, brt_val, only_presence = TRUE)
+  
+  # .............generate & save predictions............
+  #2025-10-22 train model on combined validation and training data
+  brt_best_mod_all <- train(method = "BRT", 
+                            progress = FALSE,
+                            data = brt_train_all,
+                            distribution = brt_gs_all@results[brt_id_all, 1],
+                            n.trees = brt_gs_all@results[brt_id_all, 2],
+                            interaction.depth = brt_gs_all@results[brt_id_all, 3],
+                            shrinkage = brt_gs_all@results[brt_id_all, 4],
+                            bag.fraction = brt_gs_all@results[brt_id_all, 5]
+  )
+  
+  
+  # pull AUC of model using TEST data
+  brt_auc_all <- auc(brt_best_mod_all, test=brt_test)
   
   # .............generate & save predictions............
   brt_map_all <- predict(brt_best_mod_all, data = brt_pred_stack)
