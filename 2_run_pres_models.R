@@ -4,6 +4,8 @@
 
 rm(list = ls())
 
+renv::activate()
+
 # wrangling
 library(tidyverse)
 library(here)
