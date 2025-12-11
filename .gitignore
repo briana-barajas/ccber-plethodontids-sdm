@@ -20,3 +20,7 @@ data/
 scratch/
 single-rasts/
 results/
+
+renv/
+errLog
+my-slurm-job.s
