@@ -4,6 +4,22 @@
 
 rm(list = ls())
 
+
+# wrangling
+install.packages(tidyverse)
+install.packages(here)
+install.packages(janitor)
+
+# spatial
+install.packages(sf)
+install.packages(tmap)
+install.packages(terra)
+
+# modeling
+install.packages(SDMtune)
+install.packages(rsample)
+install.packages(rJava)
+
 # wrangling
 library(tidyverse)
 library(here)
